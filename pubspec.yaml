@@ -1,0 +1,46 @@
+name: askcam
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: "^3.9.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 🔹 Core Firebase packages (all compatible)
+  firebase_core: ^4.2.0
+  firebase_auth: ^6.1.1
+  cloud_firestore: ^6.0.3
+  firebase_ml_model_downloader: ^0.4.0+3  # ✅ updated to fix version conflict
+
+  # 🔹 Google ML Kit plugins (on-device ML)
+  google_mlkit_text_recognition: ^0.15.0
+  google_mlkit_translation: ^0.13.0
+  google_mlkit_entity_extraction: ^0.15.1
+
+  # 🔹 Camera & media
+  camera: ^0.11.2
+  image_picker: ^1.2.0
+
+  # 🔹 Utilities and UI
+  google_fonts: ^6.1.0
+  path_provider: ^2.1.1
+  connectivity_plus: ^5.0.2
+  http: ^1.2.2
+  image: ^4.1.7
+  flutter_tts: ^4.2.3
+  easy_localization: ^3.0.8
+  flutter_bloc: ^9.1.1
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

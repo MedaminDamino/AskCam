@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "326547043793",
+    "project_id": "askcam-ef660",
+    "storage_bucket": "askcam-ef660.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:326547043793:android:a9409f44b9c9b7278f1cf0",
+        "android_client_info": {
+          "package_name": "askcam.example.askcam"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQww8WtkFxQD_MRn2xUgJPDr-2oET7xgU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
