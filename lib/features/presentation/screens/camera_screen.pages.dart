@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -102,10 +103,11 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
   }
 
   void _showErrorSnackBar(String message) {
+    final colors = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red.shade400,
+        backgroundColor: colors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -130,13 +132,15 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new, color: colors.onBackground),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -144,23 +148,24 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: colors.onBackground,
           ),
         ),
         centerTitle: true,
         actions: [
           if (_selectedImage != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              icon: Icon(Icons.delete_outline, color: colors.error),
               onPressed: _clearImage,
               tooltip: 'Clear Image',
             ),
+          const ThemeToggleButton(),
         ],
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
         child: CircularProgressIndicator(
-          color: Colors.cyanAccent,
+          color: colors.primary,
         ),
       )
           : _selectedImage == null
@@ -174,6 +179,8 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
   }
 
   Widget _buildEmptyState() {
+    final colors = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -195,7 +202,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
             child: Icon(
               Icons.photo_camera_outlined,
               size: 80,
-              color: Colors.white.withOpacity(0.6),
+              color: colors.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 32),
@@ -204,7 +211,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: colors.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -212,7 +219,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
             'Tap the buttons below to get started',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.white60,
+              color: colors.onSurfaceVariant,
             ),
           ),
         ],

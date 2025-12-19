@@ -1,7 +1,11 @@
 
+import 'package:askcam/features/presentation/auth/auth_gate.dart';
+import 'package:askcam/features/presentation/screens/auth/forgot_password_page.dart';
+import 'package:askcam/features/presentation/screens/auth/login_page.dart';
+import 'package:askcam/features/presentation/screens/auth/register_page.dart';
 import 'package:askcam/features/presentation/screens/camera_screen.pages.dart';
-import 'package:askcam/features/presentation/screens/home.pages.dart';
 import 'package:askcam/features/presentation/screens/text_recognition_screen.pages.dart';
+import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 
@@ -13,6 +17,9 @@ class Routes {
   static const String gallery = '/gallery';
   static const String history = '/history';
   static const String settings = '/settings';
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
 }
 
 /// Main route generator
@@ -25,7 +32,7 @@ class AppRouter {
     switch (settings.name) {
       case Routes.home:
         debugPrint('✅ Matched HOME route');
-        return _buildRoute(const HomeScreen());
+        return _buildRoute(const AuthGate());
 
       case Routes.camera:
         debugPrint('✅ Matched CAMERA route');
@@ -66,6 +73,18 @@ class AppRouter {
         return _buildRoute(
           TextRecognitionScreen(imageFile: imageFile),
         );
+
+      case Routes.login:
+        debugPrint('Matched LOGIN route');
+        return _buildRoute(const LoginPage());
+
+      case Routes.register:
+        debugPrint('Matched REGISTER route');
+        return _buildRoute(const RegisterPage());
+
+      case Routes.forgotPassword:
+        debugPrint('Matched FORGOT PASSWORD route');
+        return _buildRoute(const ForgotPasswordPage());
 
       case Routes.gallery:
         debugPrint('⚠️ Gallery route not implemented yet');
@@ -127,13 +146,15 @@ class _ErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: colors.onBackground),
           onPressed: () {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
@@ -142,9 +163,12 @@ class _ErrorScreen extends StatelessWidget {
             }
           },
         ),
-        title: const Text(
+        actions: const [
+          ThemeToggleButton(),
+        ],
+        title: Text(
           'Error',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: colors.onBackground),
         ),
       ),
       body: Center(
@@ -153,16 +177,16 @@ class _ErrorScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline,
                 size: 80,
-                color: Colors.redAccent,
+                color: colors.error,
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Oops! Something went wrong',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.onSurface,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -171,8 +195,8 @@ class _ErrorScreen extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 errorMessage,
-                style: const TextStyle(
-                  color: Colors.white70,
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
@@ -180,8 +204,8 @@ class _ErrorScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Route: $routeName',
-                style: const TextStyle(
-                  color: Colors.white60,
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
                   fontSize: 14,
                 ),
               ),
@@ -189,11 +213,11 @@ class _ErrorScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
                   Routes.home,
-                      (route) => false,
+                  (route) => false,
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.cyanAccent,
-                  foregroundColor: Colors.black,
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 16,

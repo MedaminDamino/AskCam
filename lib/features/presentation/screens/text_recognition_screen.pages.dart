@@ -1,11 +1,14 @@
 import 'dart:io';
+
+import 'package:askcam/core/utils/ai_service.dart';
 import 'package:askcam/core/utils/ml_kit_manager.dart';
+import 'package:askcam/core/utils/translation_service.dart';
+import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:image/image.dart' as img;
 
+/// Screen responsible for OCR + translation + AI assistance for a captured image.
 class TextRecognitionScreen extends StatefulWidget {
   final File imageFile;
 
@@ -18,332 +21,297 @@ class TextRecognitionScreen extends StatefulWidget {
   State<TextRecognitionScreen> createState() => _TextRecognitionScreenState();
 }
 
-class _TextRecognitionScreenState extends State<TextRecognitionScreen>
-    with SingleTickerProviderStateMixin {
-  String _extractedText = '';
-  bool _isProcessing = true;
-  TextRecognizer? _textRecognizer;
-  late AnimationController _animController;
-  late Animation<double> _fadeAnimation;
-  int _confidenceScore = 0;
-  File? _preprocessedImageFile;
+class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
+  static const Map<String, String> _languageLabels = {
+    'en': 'English (EN)',
+    'fr': 'French (FR)',
+  };
+
+  late final TextRecognizer _textRecognizer;
+
+  /// Selected target language for translation & AI answers.
+  String _targetLang = 'en';
+  String _originalText = '';
+  String _translatedText = '';
+  String _aiAnswer = '';
+
+  bool _isOcrLoading = true;
+  bool _isTranslating = false;
+  bool _isAskingAi = false;
+  String? _errorMessage;
+  String? _translationError;
 
   @override
   void initState() {
     super.initState();
-
-    _animController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _fadeAnimation = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeIn,
-    );
-
-    _processImage();
+    _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    AiService.instance.setResponseLanguage(_targetLang);
+    _runOcrAndTranslation();
   }
 
   @override
   void dispose() {
-    _textRecognizer?.close();
-    _animController.dispose();
-
-    if (_preprocessedImageFile != null && _preprocessedImageFile!.existsSync()) {
-      _preprocessedImageFile!.deleteSync();
-      debugPrint('🗑️ Cleaned up preprocessed image');
-    }
-
+    _textRecognizer.close();
     super.dispose();
   }
 
-  Future<File> _preprocessImage(File imageFile) async {
+  /// Runs the OCR pipeline and automatically translates the result to English.
+  Future<void> _runOcrAndTranslation() async {
+    setState(() {
+      _isOcrLoading = true;
+      _isTranslating = false;
+      _errorMessage = null;
+       _translationError = null;
+      _originalText = '';
+      _translatedText = '';
+      _aiAnswer = '';
+    });
+
     try {
-      final bytes = await imageFile.readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
+      final recognizedText =
+          await MLKitManager().queueOperation(() async => _textRecognizer
+              .processImage(InputImage.fromFile(widget.imageFile)));
 
-      if (image == null) return imageFile;
+      final cleaned = _postProcess(recognizedText.text);
+      if (!mounted) return;
 
-      // Basic preprocessing for better OCR
-      image = img.adjustColor(image, contrast: 1.3, brightness: 1.1);
-      image = img.convolution(
-        image,
-        filter: [0, -1, 0, -1, 5, -1, 0, -1, 0],
-      );
-
-      final tempDir = Directory.systemTemp;
-      final tempFile = File(
-          '${tempDir.path}/preprocessed_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await tempFile.writeAsBytes(img.encodeJpg(image, quality: 95));
-
-      _preprocessedImageFile = tempFile;
-
-      return tempFile;
-    } catch (e) {
-      debugPrint('Image preprocessing error: $e');
-      return imageFile;
-    }
-  }
-
-  Future<void> _processImage() async {
-    try {
-      // ✅ NEW: Queue operation to prevent simultaneous ML Kit calls
-      await MLKitManager().queueOperation(() async {
-        final processedImage = await _preprocessImage(widget.imageFile);
-        final inputImage = InputImage.fromFile(processedImage);
-
-        _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-        RecognizedText recognizedText =
-        await _textRecognizer!.processImage(inputImage);
-
-        // Extract text preserving line breaks
-        List<String> lines = [];
-        for (var block in recognizedText.blocks) {
-          for (var line in block.lines) {
-            lines.add(line.text);
-          }
-        }
-        String text = lines.join('\n');
-
-        // Calculate confidence
-        if (text.isEmpty) {
-          _confidenceScore = 0;
-        } else if (text.length < 20) {
-          _confidenceScore = 65;
-        } else if (text.length < 80) {
-          _confidenceScore = 80;
-        } else {
-          _confidenceScore = 95;
-        }
-
-        // Clean up text
-        text = _postProcessText(text);
-
-        setState(() {
-          _extractedText = text.isEmpty
-              ? 'No text found in the image.\n\nTip: Try taking a clearer photo with better lighting.'
-              : text;
-          _isProcessing = false;
-        });
-
-        _animController.forward();
-      });
-    } catch (e, stackTrace) {
-      debugPrint('OCR Error: $e');
-      debugPrint('Stack trace: $stackTrace');
       setState(() {
-        _extractedText = 'Error processing image. Please try again.';
-        _isProcessing = false;
+        _originalText = cleaned;
+        _isOcrLoading = false;
       });
-      _animController.forward();
+
+      if (cleaned.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _translatedText = '';
+        });
+        return;
+      }
+
+      await _translateCurrentText();
+    } catch (error, stackTrace) {
+      debugPrint('TextRecognitionScreen OCR/translation error: $error');
+      debugPrint('$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _errorMessage =
+            'We could not read this photo. Please retake it in better lighting.';
+        _isOcrLoading = false;
+        _isTranslating = false;
+        _translatedText = '';
+      });
     }
   }
 
-  String _postProcessText(String text) {
-    List<String> lines = text.split('\n').map((line) {
-      line = line
-          .replaceAll(RegExp(r' +'), ' ') // Multiple spaces to single
-          .replaceAll(' .', '.')
-          .replaceAll(' ,', ',')
-          .replaceAll(' :', ':')
-          .replaceAll(' ;', ';')
-          .replaceAll(' !', '!')
-          .replaceAll(' ?', '?')
-          .replaceAll('( ', '(')
-          .replaceAll(' )', ')');
+  /// Cleans up OCR text to remove awkward spacing.
+  String _postProcess(String value) {
+    final normalized = value
+        .replaceAll(RegExp(r' +'), ' ')
+        .replaceAll(' .', '.')
+        .replaceAll(' ,', ',')
+        .replaceAll(' :', ':')
+        .replaceAll(' ;', ';')
+        .replaceAll(' !', '!')
+        .replaceAll(' ?', '?')
+        .replaceAll('( ', '(')
+        .replaceAll(' )', ')');
 
-      return line.trim();
-    }).where((line) => line.isNotEmpty).toList();
-
+    final lines = normalized
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
     return lines.join('\n');
   }
 
-  void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: _extractedText));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
-            Text('Text copied to clipboard!', style: GoogleFonts.poppins()),
-          ],
-        ),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  /// Translates [_originalText] into the selected [_targetLang].
+  Future<void> _translateCurrentText() async {
+    if (_originalText.trim().isEmpty) {
+      setState(() {
+        _translatedText = '';
+        _isTranslating = false;
+        _translationError = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isTranslating = true;
+      _translationError = null;
+    });
+
+    try {
+      final translation = await TranslationService.instance
+          .translateFromArabicTo(_originalText, targetLang: _targetLang);
+
+      if (!mounted) return;
+      setState(() {
+        _translatedText = translation;
+        _isTranslating = false;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('TextRecognitionScreen translation error: $error');
+      debugPrint('$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _translatedText = _originalText;
+        _translationError =
+            'Translation unavailable right now. Showing the detected text instead.';
+        _isTranslating = false;
+      });
+    }
   }
 
-  void _editText() {
-    showDialog(
-      context: context,
-      builder: (context) => _EditTextDialog(
-        initialText: _extractedText,
-        onSave: (text) => setState(() => _extractedText = text),
-      ),
-    );
+  /// Handles language dropdown updates and re-runs translation when needed.
+  void _onLanguageChanged(String? code) {
+    if (code == null || code == _targetLang) return;
+    setState(() {
+      _targetLang = code;
+    });
+    AiService.instance.setResponseLanguage(code);
+    _translateCurrentText();
+  }
+
+  String _languageLabelForCode(String code) =>
+      _languageLabels[code] ?? code.toUpperCase();
+
+  /// Sends the translated text to the AI assistant for contextual help.
+  Future<void> _askAiAboutText() async {
+    if (_translatedText.trim().isEmpty || _isAskingAi) return;
+
+    setState(() {
+      _isAskingAi = true;
+      _aiAnswer = '';
+    });
+
+    try {
+      final response = await AiService.instance.askQuestion(_translatedText);
+      if (!mounted) return;
+
+      setState(() {
+        _aiAnswer = response.trim().isEmpty
+            ? 'The AI could not come up with an answer. Please try again.'
+            : response.trim();
+      });
+    } catch (error, stackTrace) {
+      debugPrint('TextRecognitionScreen AI error: $error');
+      debugPrint('$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _aiAnswer =
+            'We could not reach the AI service right now. Please try again later.';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() => _isAskingAi = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
-          'Text Recognition',
+          'AskCam',
           style: GoogleFonts.poppins(
-            fontSize: 20,
+            color: colors.onBackground,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
           ),
         ),
-        centerTitle: true,
-        actions: [
-          if (!_isProcessing &&
-              _extractedText.isNotEmpty &&
-              !_extractedText.contains('No text') &&
-              !_extractedText.contains('Error'))
-            IconButton(
-              icon: const Icon(Icons.copy_rounded, color: Colors.cyanAccent),
-              onPressed: _copyToClipboard,
-              tooltip: 'Copy text',
-            ),
+        iconTheme: IconThemeData(color: colors.onBackground),
+        actions: const [
+          ThemeToggleButton(),
         ],
       ),
-      body: _isProcessing
-          ? _buildLoadingState()
-          : SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildImagePreview(),
-            if (_confidenceScore > 0) _buildConfidenceIndicator(),
-            _buildExtractedText(),
-            const SizedBox(height: 20),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildImagePreview(),
+              const SizedBox(height: 24),
+              if (_errorMessage != null) _buildErrorBanner(),
+              _buildTextSection(
+                title: 'Original text',
+                content: _originalText,
+                isLoading: _isOcrLoading,
+                hint: _errorMessage ??
+                    'We are extracting text from the photo. Please hold tight.',
+              ),
+              const SizedBox(height: 18),
+              _buildLanguageSelector(),
+              const SizedBox(height: 12),
+              _buildTextSection(
+                title: 'Translated text (${_targetLang.toUpperCase()})',
+                content: _translatedText,
+                isLoading: _isTranslating,
+                hint: _originalText.isEmpty
+                    ? 'Translation will appear once OCR completes.'
+                    : 'Translating to ${_languageLabelForCode(_targetLang)}...',
+                errorText: _translationError,
+              ),
+              const SizedBox(height: 24),
+              _buildAskAiButton(),
+              const SizedBox(height: 16),
+              _buildAiAnswerCard(),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  Colors.cyan.withOpacity(0.3),
-                  Colors.purple.withOpacity(0.3),
-                ],
-              ),
-            ),
-            child: const Center(
-              child: CircularProgressIndicator(
-                color: Colors.cyanAccent,
-                strokeWidth: 3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Analyzing Text...',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Processing image with AI',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white60,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildImagePreview() {
     return Container(
-      margin: const EdgeInsets.all(20),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.35,
-      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.cyanAccent.withOpacity(0.2),
-            blurRadius: 20,
-            spreadRadius: 2,
+            color: Colors.cyanAccent.withOpacity(0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: Image.file(
           widget.imageFile,
           width: double.infinity,
-          fit: BoxFit.contain,
+          fit: BoxFit.cover,
         ),
       ),
     );
   }
 
-  Widget _buildConfidenceIndicator() {
-    Color confidenceColor;
-    String confidenceText;
-
-    if (_confidenceScore >= 80) {
-      confidenceColor = Colors.greenAccent;
-      confidenceText = 'Excellent';
-    } else if (_confidenceScore >= 60) {
-      confidenceColor = Colors.yellowAccent;
-      confidenceText = 'Good';
-    } else {
-      confidenceColor = Colors.orangeAccent;
-      confidenceText = 'Fair - May need editing';
-    }
-
+  Widget _buildErrorBanner() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: confidenceColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: confidenceColor.withOpacity(0.3)),
+        color: colors.error.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.error.withOpacity(0.4)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.auto_awesome, color: confidenceColor, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            'Accuracy: $_confidenceScore% - $confidenceText',
-            style: GoogleFonts.poppins(
-              color: confidenceColor,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
+          Icon(Icons.warning_rounded, color: colors.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: GoogleFonts.poppins(
+                color: colors.error,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -351,250 +319,251 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen>
     );
   }
 
-  Widget _buildExtractedText() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
+  Widget _buildTextSection({
+    required String title,
+    required String content,
+    required bool isLoading,
+    required String hint,
+    String? errorText,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sectionGradient = isDark
+        ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF1E1E3F).withOpacity(0.8),
-              const Color(0xFF2D2D5F).withOpacity(0.6),
+            colors: [Color(0xFF1F1F3B), Color(0xFF2A2A50)],
+          )
+        : LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [colors.surface, colors.surfaceVariant],
+          );
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: sectionGradient,
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  color: colors.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colors.primary,
+                  ),
+                ),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.cyanAccent.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.text_fields_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Extracted Text',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        '${_extractedText.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length} words',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.white60,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          if (content.isNotEmpty)
             Container(
-              constraints: const BoxConstraints(
-                maxHeight: 500,
-                minHeight: 100,
+              constraints: const BoxConstraints(minHeight: 100, maxHeight: 260),
+              decoration: BoxDecoration(
+                color: colors.surfaceVariant.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(16),
               ),
+              padding: const EdgeInsets.all(12),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: SelectableText(
-                  _extractedText,
-                  style: GoogleFonts.notoSans(
-                    fontSize: 15,
-                    height: 1.8,
-                    color: Colors.white.withOpacity(0.95),
-                    letterSpacing: 0.2,
+                  content,
+                  style: GoogleFonts.poppins(
+                    color: colors.onSurface,
+                    fontSize: 14,
+                    height: 1.5,
                   ),
                 ),
               ),
-            ),
-            if (_extractedText.isNotEmpty &&
-                !_extractedText.contains('No text') &&
-                !_extractedText.contains('Error'))
-              Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _editText,
-                        icon: const Icon(Icons.edit_rounded, size: 18),
-                        label: Text(
-                          'Edit',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                          Colors.yellowAccent.withOpacity(0.2),
-                          foregroundColor: Colors.yellowAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.yellowAccent.withOpacity(0.5),
-                            ),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _copyToClipboard,
-                        icon: const Icon(Icons.copy_rounded, size: 18),
-                        label: Text(
-                          'Copy',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent.withOpacity(0.2),
-                          foregroundColor: Colors.cyanAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.cyanAccent.withOpacity(0.5),
-                            ),
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            )
+          else
+            Text(
+              hint,
+              style: GoogleFonts.poppins(
+                color: colors.onSurfaceVariant,
+                fontSize: 13,
               ),
+            ),
+          if (errorText != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              errorText,
+              style: GoogleFonts.poppins(
+                color: colors.tertiary,
+                fontSize: 12,
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
-}
 
-// Edit Text Dialog
-class _EditTextDialog extends StatefulWidget {
-  final String initialText;
-  final Function(String) onSave;
-
-  const _EditTextDialog({
-    required this.initialText,
-    required this.onSave,
-  });
-
-  @override
-  State<_EditTextDialog> createState() => _EditTextDialogState();
-}
-
-class _EditTextDialogState extends State<_EditTextDialog> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialText);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1E1E3F),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(
-        'Edit Text',
-        style: GoogleFonts.poppins(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+  /// UI dropdown letting users pick the target translation language.
+  Widget _buildLanguageSelector() {
+    final colors = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Translate into:',
+          style: GoogleFonts.poppins(
+            color: colors.onSurface,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
         ),
-      ),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
-        child: TextField(
-          controller: _controller,
-          maxLines: 15,
-          style: GoogleFonts.notoSans(color: Colors.white, fontSize: 14),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xFF0A0E21),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-              BorderSide(color: Colors.cyanAccent.withOpacity(0.3)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-              BorderSide(color: Colors.cyanAccent.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.cyanAccent),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: isDark ? const Color(0xFF1F1F3B) : colors.surface,
+            border: Border.all(color: colors.outlineVariant),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _targetLang,
+              dropdownColor: isDark ? const Color(0xFF1F1F3B) : colors.surface,
+              iconEnabledColor: colors.primary,
+              onChanged: _onLanguageChanged,
+              items: _languageLabels.entries
+                  .map(
+                    (entry) => DropdownMenuItem<String>(
+                      value: entry.key,
+                      child: Text(
+                        entry.value,
+                        style: GoogleFonts.poppins(
+                          color: colors.onSurface,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancel',
-            style: GoogleFonts.poppins(color: Colors.white60),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            widget.onSave(_controller.text);
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.cyanAccent,
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Text(
-            'Save',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        const SizedBox(height: 6),
+        Text(
+          'Changing this option re-translates the detected text automatically.',
+          style: GoogleFonts.poppins(
+            color: colors.onSurfaceVariant,
+            fontSize: 12,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAskAiButton() {
+    final colors = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: (_translatedText.trim().isEmpty || _isAskingAi || _isTranslating)
+            ? null
+            : _askAiAboutText,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colors.primary,
+          disabledBackgroundColor: colors.surfaceVariant,
+          foregroundColor: colors.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: _isAskingAi
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: colors.onPrimary,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Asking AI...',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            : Text(
+                'Ask AI about this',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildAiAnswerCard() {
+    final colors = Theme.of(context).colorScheme;
+    final hasAnswer = _aiAnswer.trim().isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: colors.surface,
+        border: Border.all(color: colors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'AI Answer',
+            style: GoogleFonts.poppins(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (hasAnswer)
+            SelectableText(
+              _aiAnswer,
+              style: GoogleFonts.poppins(
+                color: colors.onSurface,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            )
+          else
+            Text(
+              _isAskingAi
+                  ? 'Waiting for the AI assistant to respond...'
+                  : 'Ask AI to see step-by-step explanations or hints here.',
+              style: GoogleFonts.poppins(
+                color: colors.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

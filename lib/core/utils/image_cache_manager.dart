@@ -10,6 +10,10 @@ class ImageCacheManager {
 
   /// Clear all temporary images older than 24 hours
   Future<void> clearOldCache() async {
+    if (kIsWeb) {
+      debugPrint('Cache cleanup skipped on web');
+      return;
+    }
     try {
       final tempDir = await getTemporaryDirectory();
       final now = DateTime.now();
@@ -44,6 +48,10 @@ class ImageCacheManager {
 
   /// Clear ALL temporary images immediately
   Future<void> clearAllCache() async {
+    if (kIsWeb) {
+      debugPrint('Full cache clear skipped on web');
+      return;
+    }
     try {
       final tempDir = await getTemporaryDirectory();
       int deletedCount = 0;
@@ -68,6 +76,10 @@ class ImageCacheManager {
 
   /// Get total cache size in MB
   Future<double> getCacheSize() async {
+    if (kIsWeb) {
+      debugPrint('Cache size unavailable on web');
+      return 0.0;
+    }
     try {
       final tempDir = await getTemporaryDirectory();
       int totalBytes = 0;
