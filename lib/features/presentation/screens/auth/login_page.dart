@@ -2,6 +2,7 @@ import 'package:askcam/features/presentation/auth/auth_controller.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/features/presentation/widgets/google_sign_in_button.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
+import 'package:askcam/features/presentation/widgets/language_selector_button.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -95,6 +96,7 @@ class _LoginPageState extends State<LoginPage> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: const [
+          LanguageSelectorButton(),
           ThemeToggleButton(),
         ],
       ),

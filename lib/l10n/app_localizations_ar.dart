@@ -267,9 +267,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get authLoginRequiredToSaveImages => 'يرجى تسجيل الدخول لحفظ الصور.';
 
   @override
-  String get authLoginRequiredToSaveWords => 'يرجى تسجيل الدخول لحفظ الكلمات.';
-
-  @override
   String get authLoginRequiredToSaveHistory => 'يرجى تسجيل الدخول لحفظ السجل.';
 
   @override
@@ -371,22 +368,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'AskCam هو تطبيق Flutter للهواتف يتيح للمستخدمين التقاط أو تحميل الصور، واستخراج النص باستخدام ML Kit OCR، وترجمة النص المستخرج، وطرح أسئلة على الذكاء الاصطناعي لفهم المستندات والواجبات بشكل أفضل.';
+      'يساعدك AskCam على التقاط أو تحميل الصور، واستخراج النص باستخدام التعرف على النص على الجهاز، وترجمته إلى لغات متعددة، وطرح أسئلة على الذكاء الاصطناعي لفهم المستندات والواجبات بشكل أفضل.';
 
   @override
-  String get aboutMlKitServicesTitle => 'خدمات ML Kit المستخدمة';
+  String get aboutMlKitServicesTitle => 'ميزات ML Kit';
 
   @override
-  String get aboutMlKitTextRecognition => 'التعرّف على النص (OCR)';
+  String get aboutMlKitTextRecognition => 'التعرف على النص (OCR)';
 
   @override
-  String get aboutMlKitTranslation => 'الترجمة على الجهاز';
+  String get aboutMlKitTextRecognitionDesc =>
+      'يستخدم ميزة التعرف على النص من ML Kit على الجهاز لاكتشاف واستخراج النص من الصور. يعمل بدون اتصال لنتائج فورية.';
 
   @override
-  String get aboutAiServiceTitle => 'خدمة الذكاء الاصطناعي';
+  String get aboutMlKitTextRecognitionLink =>
+      'https://developers.google.com/ml-kit/vision/text-recognition';
 
   @override
-  String get aboutAiServiceGemini => 'واجهة Gemini';
+  String get aboutMlKitTranslation => 'الترجمة اللغوية';
+
+  @override
+  String get aboutMlKitTranslationDesc =>
+      'يستخدم ميزة الترجمة من ML Kit على الجهاز لترجمة النص المستخرج بين اللغات. سريع وخاص.';
+
+  @override
+  String get aboutMlKitTranslationLink =>
+      'https://developers.google.com/ml-kit/language/translation';
+
+  @override
+  String get aboutAiServiceTitle => 'فهم الذكاء الاصطناعي';
+
+  @override
+  String get aboutAiServiceGemini => 'Gemini للذكاء الاصطناعي';
+
+  @override
+  String get aboutAiServiceGeminiDesc =>
+      'يحلل Gemini النص المستخرج للإجابة على أسئلتك ومساعدتك على فهم المستندات. مدعوم من Google AI.';
+
+  @override
+  String get aboutAiServiceGeminiLink => 'https://ai.google.dev/gemini-api';
+
+  @override
+  String get aboutPrivacyTitle => 'الخصوصية والأمان';
+
+  @override
+  String get aboutPrivacyDesc =>
+      'تعمل ميزات ML Kit على جهازك حيث أمكن. تتم معالجة بياناتك بشكل آمن، ولا يتم تخزين أي معلومات حساسة بشكل غير ضروري.';
+
+  @override
+  String get aboutLearnMore => 'معرفة المزيد';
 
   @override
   String get aboutTargetUsersTitle => 'الفئة المستهدفة';
@@ -413,14 +443,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get galleryEmpty => 'لا توجد صور بعد.';
 
   @override
-  String get savedWordsDeleteTitle => 'حذف الكلمة المحفوظة؟';
-
-  @override
-  String savedWordsDeleteMessage(Object word) {
-    return 'إزالة \"$word\" من الكلمات المحفوظة؟';
-  }
-
-  @override
   String get historyDeleteTitle => 'حذف عنصر السجل؟';
 
   @override
@@ -428,12 +450,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get historyTitle => 'السجل';
-
-  @override
-  String get historyTab => 'السجل';
-
-  @override
-  String get savedWordsTab => 'الكلمات المحفوظة';
 
   @override
   String get historyLoadFailed => 'تعذر تحميل السجل.';
@@ -452,15 +468,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get historySaveFailed => 'فشل الحفظ.';
-
-  @override
-  String get savedWordsSearchHint => 'البحث في الكلمات المحفوظة';
-
-  @override
-  String get savedWordsLoadFailed => 'تعذر تحميل الكلمات المحفوظة.';
-
-  @override
-  String get savedWordsEmpty => 'لا توجد كلمات محفوظة بعد.';
 
   @override
   String get timeJustNow => 'الآن';
@@ -609,39 +616,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'عدّل النص إذا فات التعرف على شيء قبل الترجمة أو سؤال الذكاء الاصطناعي.';
 
   @override
-  String get saveWordsNoText => 'لا يوجد نص للحفظ بعد.';
-
-  @override
-  String get saveWordsSelectOrTypeError =>
-      'حدد كلمة/عبارة أولًا أو اكتب واحدة.';
-
-  @override
-  String get saveWordsLengthError => 'يجب أن يكون طول الكلمة بين 2 و120 حرفًا.';
-
-  @override
-  String get saveWordsAlreadySaved => 'تم حفظها بالفعل.';
-
-  @override
-  String get saveWordsSaved => 'تم الحفظ.';
-
-  @override
-  String get saveWordsFailed => 'فشل الحفظ، حاول مرة أخرى.';
-
-  @override
-  String get saveWordsTitle => 'حفظ الكلمات';
-
-  @override
-  String get saveWordsInstruction =>
-      'حدد كلمة أو عبارة من النص أعلاه أو اكتب واحدة أدناه.';
-
-  @override
-  String get saveWordsHint => 'اكتب كلمة أو عبارة للحفظ';
-
-  @override
   String get historySaveAction => 'حفظ السجل';
-
-  @override
-  String get saveWordsAction => 'حفظ الكلمات';
 
   @override
   String get actionHome => 'الرئيسية';

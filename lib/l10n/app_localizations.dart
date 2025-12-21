@@ -562,12 +562,6 @@ abstract class AppLocalizations {
   /// **'Please login to save images.'**
   String get authLoginRequiredToSaveImages;
 
-  /// No description provided for @authLoginRequiredToSaveWords.
-  ///
-  /// In en, this message translates to:
-  /// **'Please login to save words.'**
-  String get authLoginRequiredToSaveWords;
-
   /// No description provided for @authLoginRequiredToSaveHistory.
   ///
   /// In en, this message translates to:
@@ -751,13 +745,13 @@ abstract class AppLocalizations {
   /// No description provided for @aboutDescription.
   ///
   /// In en, this message translates to:
-  /// **'AskCam is a Flutter mobile application that allows users to capture or upload images, extract text using ML Kit OCR, translate the extracted text, and ask AI questions to better understand documents and homework.'**
+  /// **'AskCam helps you capture or upload images, extract text using on-device OCR, translate it into multiple languages, and ask AI questions to better understand documents and homework.'**
   String get aboutDescription;
 
   /// No description provided for @aboutMlKitServicesTitle.
   ///
   /// In en, this message translates to:
-  /// **'ML Kit services used'**
+  /// **'ML Kit Features'**
   String get aboutMlKitServicesTitle;
 
   /// No description provided for @aboutMlKitTextRecognition.
@@ -766,23 +760,77 @@ abstract class AppLocalizations {
   /// **'Text Recognition (OCR)'**
   String get aboutMlKitTextRecognition;
 
+  /// No description provided for @aboutMlKitTextRecognitionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses ML Kit on-device text recognition to detect and extract text from images. Works offline for instant results.'**
+  String get aboutMlKitTextRecognitionDesc;
+
+  /// No description provided for @aboutMlKitTextRecognitionLink.
+  ///
+  /// In en, this message translates to:
+  /// **'https://developers.google.com/ml-kit/vision/text-recognition'**
+  String get aboutMlKitTextRecognitionLink;
+
   /// No description provided for @aboutMlKitTranslation.
   ///
   /// In en, this message translates to:
-  /// **'On-device Translation'**
+  /// **'Language Translation'**
   String get aboutMlKitTranslation;
+
+  /// No description provided for @aboutMlKitTranslationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses ML Kit on-device translation to translate extracted text between languages. Fast and private.'**
+  String get aboutMlKitTranslationDesc;
+
+  /// No description provided for @aboutMlKitTranslationLink.
+  ///
+  /// In en, this message translates to:
+  /// **'https://developers.google.com/ml-kit/language/translation'**
+  String get aboutMlKitTranslationLink;
 
   /// No description provided for @aboutAiServiceTitle.
   ///
   /// In en, this message translates to:
-  /// **'AI service'**
+  /// **'AI Understanding'**
   String get aboutAiServiceTitle;
 
   /// No description provided for @aboutAiServiceGemini.
   ///
   /// In en, this message translates to:
-  /// **'Gemini API'**
+  /// **'Gemini AI'**
   String get aboutAiServiceGemini;
+
+  /// No description provided for @aboutAiServiceGeminiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini analyzes extracted text to answer your questions and help you understand documents. Powered by Google AI.'**
+  String get aboutAiServiceGeminiDesc;
+
+  /// No description provided for @aboutAiServiceGeminiLink.
+  ///
+  /// In en, this message translates to:
+  /// **'https://ai.google.dev/gemini-api'**
+  String get aboutAiServiceGeminiLink;
+
+  /// No description provided for @aboutPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & Security'**
+  String get aboutPrivacyTitle;
+
+  /// No description provided for @aboutPrivacyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'ML Kit features run on your device where possible. Your data is processed securely, and no sensitive information is stored unnecessarily.'**
+  String get aboutPrivacyDesc;
+
+  /// No description provided for @aboutLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get aboutLearnMore;
 
   /// No description provided for @aboutTargetUsersTitle.
   ///
@@ -832,18 +880,6 @@ abstract class AppLocalizations {
   /// **'No images yet.'**
   String get galleryEmpty;
 
-  /// No description provided for @savedWordsDeleteTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete saved word?'**
-  String get savedWordsDeleteTitle;
-
-  /// No description provided for @savedWordsDeleteMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove \"{word}\" from your saved words?'**
-  String savedWordsDeleteMessage(Object word);
-
   /// No description provided for @historyDeleteTitle.
   ///
   /// In en, this message translates to:
@@ -861,18 +897,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'History'**
   String get historyTitle;
-
-  /// No description provided for @historyTab.
-  ///
-  /// In en, this message translates to:
-  /// **'History'**
-  String get historyTab;
-
-  /// No description provided for @savedWordsTab.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved Words'**
-  String get savedWordsTab;
 
   /// No description provided for @historyLoadFailed.
   ///
@@ -909,24 +933,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to save.'**
   String get historySaveFailed;
-
-  /// No description provided for @savedWordsSearchHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Search saved words'**
-  String get savedWordsSearchHint;
-
-  /// No description provided for @savedWordsLoadFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to load saved words.'**
-  String get savedWordsLoadFailed;
-
-  /// No description provided for @savedWordsEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No saved words yet.'**
-  String get savedWordsEmpty;
 
   /// No description provided for @timeJustNow.
   ///
@@ -1198,71 +1204,11 @@ abstract class AppLocalizations {
   /// **'Edit the text if OCR missed anything before translating or asking AI.'**
   String get ocrEditInstruction;
 
-  /// No description provided for @saveWordsNoText.
-  ///
-  /// In en, this message translates to:
-  /// **'No text to save yet.'**
-  String get saveWordsNoText;
-
-  /// No description provided for @saveWordsSelectOrTypeError.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a word/phrase first or type one.'**
-  String get saveWordsSelectOrTypeError;
-
-  /// No description provided for @saveWordsLengthError.
-  ///
-  /// In en, this message translates to:
-  /// **'Word length must be between 2 and 120 characters.'**
-  String get saveWordsLengthError;
-
-  /// No description provided for @saveWordsAlreadySaved.
-  ///
-  /// In en, this message translates to:
-  /// **'Already saved.'**
-  String get saveWordsAlreadySaved;
-
-  /// No description provided for @saveWordsSaved.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved.'**
-  String get saveWordsSaved;
-
-  /// No description provided for @saveWordsFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to save, try again.'**
-  String get saveWordsFailed;
-
-  /// No description provided for @saveWordsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Save words'**
-  String get saveWordsTitle;
-
-  /// No description provided for @saveWordsInstruction.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a word or phrase in the text above, or type one below.'**
-  String get saveWordsInstruction;
-
-  /// No description provided for @saveWordsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Type a word or phrase to save'**
-  String get saveWordsHint;
-
   /// No description provided for @historySaveAction.
   ///
   /// In en, this message translates to:
   /// **'Save history'**
   String get historySaveAction;
-
-  /// No description provided for @saveWordsAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Save words'**
-  String get saveWordsAction;
 
   /// No description provided for @actionHome.
   ///

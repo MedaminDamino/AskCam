@@ -2,6 +2,7 @@ import 'package:askcam/features/presentation/auth/auth_controller.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/features/presentation/widgets/google_sign_in_button.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
+import 'package:askcam/features/presentation/widgets/language_selector_button.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -123,6 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
         foregroundColor: colors.onBackground,
         elevation: 0,
         actions: const [
+          LanguageSelectorButton(),
           ThemeToggleButton(),
         ],
       ),
@@ -332,28 +334,38 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     SizedBox(height: AppSpacing.lg),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          l10n.authAlreadyHaveAccount,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
+                    Padding(
+                      padding: AppSpacing.only(top: AppSpacing.lg),
+                      child: Center(
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            Text(
+                              l10n.authAlreadyHaveAccount,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            TextButton(
+                              onPressed: ButtonFeedbackService.wrap(
+                                context,
+                                    () {
+                                  if (Navigator.canPop(context)) {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                              ),
+                              child: Text(l10n.authSignIn),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: ButtonFeedbackService.wrap(
-                            context,
-                            () {
-                              if (Navigator.canPop(context)) {
-                                Navigator.pop(context);
-                              }
-                            },
-                          ),
-                          child: Text(l10n.authSignIn),
-                        ),
-                      ],
+                      ),
                     ),
+
                   ],
                 ),
               ),

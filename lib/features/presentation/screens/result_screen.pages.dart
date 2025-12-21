@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:askcam/core/config/app_runtime_config.dart';
 import 'package:askcam/core/services/image_upload_service.dart';
 import 'package:askcam/core/services/history_service.dart';
-import 'package:askcam/core/services/saved_words_service.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/features/gallery/data/gallery_repository.dart';
 import 'package:askcam/features/presentation/settings/settings_controller.dart';
@@ -278,229 +277,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
     );
   }
 
-  String _getSelectedText() {
-    final selection = _textController.selection;
-    if (!selection.isValid || selection.isCollapsed) return '';
-    final text = _textController.text;
-    final start = selection.start;
-    final end = selection.end;
-    if (start < 0 || end > text.length || start >= end) return '';
-    return text.substring(start, end);
-  }
 
-  Future<void> _openSaveWordsSheet() async {
-    if (_isOcrLoading) return;
-    final extractedText = _textController.text.trim();
-    if (extractedText.isEmpty) {
-      _showSnackBar(context.l10n.saveWordsNoText);
-      return;
-    }
-    if (!_isOnline) {
-      _showSnackBar(context.l10n.errorNoInternetConnection);
-      return;
-    }
-
-    final initialSelection = _getSelectedText().trim();
-    final inputController = TextEditingController(text: initialSelection);
-    final colors = Theme.of(context).colorScheme;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
-      ),
-      builder: (sheetContext) {
-        bool isSaving = false;
-        String? errorText;
-
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final media = MediaQuery.of(context);
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-
-            Future<void> handleSave() async {
-              if (isSaving) return;
-              final value = inputController.text.trim();
-              if (value.isEmpty) {
-                setModalState(() {
-                  errorText = context.l10n.saveWordsSelectOrTypeError;
-                });
-                return;
-              }
-              if (value.length < 2 || value.length > 120) {
-                setModalState(() {
-                  errorText = context.l10n.saveWordsLengthError;
-                });
-                return;
-              }
-
-              if (FirebaseAuth.instance.currentUser == null) {
-                Navigator.pop(sheetContext);
-                _showSnackBar(context.l10n.authLoginRequiredToSaveWords);
-                return;
-              }
-              if (!await _ensureOnline()) {
-                setModalState(() {
-                  errorText = context.l10n.errorNoInternetConnection;
-                });
-                return;
-              }
-
-              final normalized = SavedWordsService.normalizeInput(value);
-              setModalState(() {
-                isSaving = true;
-                errorText = null;
-              });
-
-              try {
-                final service = SavedWordsService.instance;
-                final exists = await service.existsNormalized(normalized);
-                if (exists) {
-                  setModalState(() {
-                    isSaving = false;
-                    errorText = context.l10n.saveWordsAlreadySaved;
-                  });
-                  _showSnackBar(context.l10n.saveWordsAlreadySaved);
-                  return;
-                }
-
-                final language = context.read<SettingsController>().languageCode;
-                await service.saveWord(
-                  text: value,
-                  imageId: _uploadedImageId,
-                  language: language,
-                );
-                if (!sheetContext.mounted) return;
-                setModalState(() {
-                  isSaving = false;
-                });
-                Navigator.pop(sheetContext);
-                if (!mounted) return;
-                _showSnackBar(context.l10n.saveWordsSaved);
-              } catch (e, stackTrace) {
-                debugPrint('Failed to save word: $e');
-                debugPrintStack(stackTrace: stackTrace);
-                if (!mounted) return;
-                setModalState(() {
-                  isSaving = false;
-                  errorText = context.l10n.saveWordsFailed;
-                });
-                _showSnackBar(context.l10n.saveWordsFailed);
-              }
-            }
-
-            return Padding(
-              padding: AppSpacing.only(
-                left: AppSpacing.xl,
-                right: AppSpacing.xl,
-                top: AppSpacing.lg,
-                bottom: AppSpacing.lg + media.viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.bookmark_add_rounded, color: colors.primary),
-                      SizedBox(width: AppSpacing.sm),
-                      Text(
-                        context.l10n.saveWordsTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.sm),
-                  Text(
-                    context.l10n.saveWordsInstruction,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colors.onSurfaceVariant,
-                        ),
-                  ),
-                  SizedBox(height: AppSpacing.md),
-                  Container(
-                    constraints: BoxConstraints(
-                      maxHeight: AppSpacing.xxl +
-                          AppSpacing.xxl +
-                          AppSpacing.xxl +
-                          AppSpacing.xxl,
-                    ),
-                    padding: AppSpacing.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: isDark ? colors.surfaceVariant : colors.surfaceVariant,
-                      borderRadius: AppRadius.circular(AppRadius.md),
-                      border: Border.all(color: colors.outlineVariant),
-                    ),
-                    child: SingleChildScrollView(
-                      child: SelectableText(
-                        extractedText,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    controller: inputController,
-                    maxLines: 2,
-                    hintText: context.l10n.saveWordsHint,
-                  ),
-                  if (errorText != null) ...[
-                    SizedBox(height: AppSpacing.sm),
-                    Text(
-                      errorText!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colors.error,
-                          ),
-                    ),
-                  ],
-                  SizedBox(height: AppSpacing.lg),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton.secondary(
-                          label: context.l10n.actionCancel,
-                          onPressed: ButtonFeedbackService.wrap(
-                            sheetContext,
-                            isSaving ? null : () => Navigator.pop(sheetContext),
-                          ),
-                          expanded: true,
-                        ),
-                      ),
-                      SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: AppButton.primary(
-                          label: context.l10n.actionSave,
-                          onPressed: ButtonFeedbackService.wrap(
-                            sheetContext,
-                            isSaving ? null : handleSave,
-                          ),
-                          icon: isSaving
-                              ? SizedBox(
-                                  width: AppSpacing.lg,
-                                  height: AppSpacing.lg,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: AppSpacing.xs,
-                                    color: colors.onPrimary,
-                                  ),
-                                )
-                              : null,
-                          expanded: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   Future<void> _saveToHistory() async {
     if (_isSavingHistory || _isOcrLoading) return;
@@ -625,41 +402,24 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                 ),
               ),
               SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton.secondary(
-                      label: context.l10n.historySaveAction,
-                      onPressed: ButtonFeedbackService.wrap(
-                        context,
-                        (_isOcrLoading || _isSavingHistory || !_isOnline)
-                            ? null
-                            : _saveToHistory,
-                      ),
-                      icon: _isSavingHistory
-                          ? SizedBox(
-                              width: AppSpacing.lg,
-                              height: AppSpacing.lg,
-                              child: CircularProgressIndicator(
-                                strokeWidth: AppSpacing.xs,
-                                color: colors.primary,
-                              ),
-                            )
-                          : const Icon(Icons.history_rounded),
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: AppButton.secondary(
-                      label: context.l10n.saveWordsAction,
-                      onPressed: ButtonFeedbackService.wrap(
-                        context,
-                        (_isOcrLoading || !_isOnline) ? null : _openSaveWordsSheet,
-                      ),
-                      icon: const Icon(Icons.bookmark_add_rounded),
-                    ),
-                  ),
-                ],
+              AppButton.secondary(
+                label: context.l10n.historySaveAction,
+                onPressed: ButtonFeedbackService.wrap(
+                  context,
+                  (_isOcrLoading || _isSavingHistory || !_isOnline)
+                      ? null
+                      : _saveToHistory,
+                ),
+                icon: _isSavingHistory
+                    ? SizedBox(
+                        width: AppSpacing.lg,
+                        height: AppSpacing.lg,
+                        child: CircularProgressIndicator(
+                          strokeWidth: AppSpacing.xs,
+                          color: colors.primary,
+                        ),
+                      )
+                    : const Icon(Icons.history_rounded),
               ),
               SizedBox(height: AppSpacing.sm),
               Text(

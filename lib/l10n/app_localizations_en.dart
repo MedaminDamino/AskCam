@@ -271,9 +271,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLoginRequiredToSaveImages => 'Please login to save images.';
 
   @override
-  String get authLoginRequiredToSaveWords => 'Please login to save words.';
-
-  @override
   String get authLoginRequiredToSaveHistory => 'Please login to save history.';
 
   @override
@@ -374,22 +371,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'AskCam is a Flutter mobile application that allows users to capture or upload images, extract text using ML Kit OCR, translate the extracted text, and ask AI questions to better understand documents and homework.';
+      'AskCam helps you capture or upload images, extract text using on-device OCR, translate it into multiple languages, and ask AI questions to better understand documents and homework.';
 
   @override
-  String get aboutMlKitServicesTitle => 'ML Kit services used';
+  String get aboutMlKitServicesTitle => 'ML Kit Features';
 
   @override
   String get aboutMlKitTextRecognition => 'Text Recognition (OCR)';
 
   @override
-  String get aboutMlKitTranslation => 'On-device Translation';
+  String get aboutMlKitTextRecognitionDesc =>
+      'Uses ML Kit on-device text recognition to detect and extract text from images. Works offline for instant results.';
 
   @override
-  String get aboutAiServiceTitle => 'AI service';
+  String get aboutMlKitTextRecognitionLink =>
+      'https://developers.google.com/ml-kit/vision/text-recognition';
 
   @override
-  String get aboutAiServiceGemini => 'Gemini API';
+  String get aboutMlKitTranslation => 'Language Translation';
+
+  @override
+  String get aboutMlKitTranslationDesc =>
+      'Uses ML Kit on-device translation to translate extracted text between languages. Fast and private.';
+
+  @override
+  String get aboutMlKitTranslationLink =>
+      'https://developers.google.com/ml-kit/language/translation';
+
+  @override
+  String get aboutAiServiceTitle => 'AI Understanding';
+
+  @override
+  String get aboutAiServiceGemini => 'Gemini AI';
+
+  @override
+  String get aboutAiServiceGeminiDesc =>
+      'Gemini analyzes extracted text to answer your questions and help you understand documents. Powered by Google AI.';
+
+  @override
+  String get aboutAiServiceGeminiLink => 'https://ai.google.dev/gemini-api';
+
+  @override
+  String get aboutPrivacyTitle => 'Privacy & Security';
+
+  @override
+  String get aboutPrivacyDesc =>
+      'ML Kit features run on your device where possible. Your data is processed securely, and no sensitive information is stored unnecessarily.';
+
+  @override
+  String get aboutLearnMore => 'Learn more';
 
   @override
   String get aboutTargetUsersTitle => 'Target users';
@@ -416,14 +446,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get galleryEmpty => 'No images yet.';
 
   @override
-  String get savedWordsDeleteTitle => 'Delete saved word?';
-
-  @override
-  String savedWordsDeleteMessage(Object word) {
-    return 'Remove \"$word\" from your saved words?';
-  }
-
-  @override
   String get historyDeleteTitle => 'Delete history item?';
 
   @override
@@ -431,12 +453,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get historyTitle => 'History';
-
-  @override
-  String get historyTab => 'History';
-
-  @override
-  String get savedWordsTab => 'Saved Words';
 
   @override
   String get historyLoadFailed => 'Unable to load history.';
@@ -455,15 +471,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get historySaveFailed => 'Failed to save.';
-
-  @override
-  String get savedWordsSearchHint => 'Search saved words';
-
-  @override
-  String get savedWordsLoadFailed => 'Unable to load saved words.';
-
-  @override
-  String get savedWordsEmpty => 'No saved words yet.';
 
   @override
   String get timeJustNow => 'Just now';
@@ -615,40 +622,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Edit the text if OCR missed anything before translating or asking AI.';
 
   @override
-  String get saveWordsNoText => 'No text to save yet.';
-
-  @override
-  String get saveWordsSelectOrTypeError =>
-      'Select a word/phrase first or type one.';
-
-  @override
-  String get saveWordsLengthError =>
-      'Word length must be between 2 and 120 characters.';
-
-  @override
-  String get saveWordsAlreadySaved => 'Already saved.';
-
-  @override
-  String get saveWordsSaved => 'Saved.';
-
-  @override
-  String get saveWordsFailed => 'Failed to save, try again.';
-
-  @override
-  String get saveWordsTitle => 'Save words';
-
-  @override
-  String get saveWordsInstruction =>
-      'Select a word or phrase in the text above, or type one below.';
-
-  @override
-  String get saveWordsHint => 'Type a word or phrase to save';
-
-  @override
   String get historySaveAction => 'Save history';
-
-  @override
-  String get saveWordsAction => 'Save words';
 
   @override
   String get actionHome => 'Home';

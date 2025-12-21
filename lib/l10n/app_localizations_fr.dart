@@ -278,10 +278,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Veuillez vous connecter pour enregistrer les images.';
 
   @override
-  String get authLoginRequiredToSaveWords =>
-      'Veuillez vous connecter pour enregistrer des mots.';
-
-  @override
   String get authLoginRequiredToSaveHistory =>
       'Veuillez vous connecter pour enregistrer l\'historique.';
 
@@ -385,22 +381,55 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'AskCam est une application mobile Flutter qui permet aux utilisateurs de capturer ou importer des images, d\'extraire le texte avec l\'OCR ML Kit, de traduire le texte extrait, et de poser des questions a l\'IA pour mieux comprendre les documents et les devoirs.';
+      'AskCam vous aide a capturer ou importer des images, extraire le texte avec OCR sur l\'appareil, le traduire en plusieurs langues et poser des questions a l\'IA pour mieux comprendre vos documents et devoirs.';
 
   @override
-  String get aboutMlKitServicesTitle => 'Services ML Kit utilises';
+  String get aboutMlKitServicesTitle => 'Fonctionnalites ML Kit';
 
   @override
   String get aboutMlKitTextRecognition => 'Reconnaissance de texte (OCR)';
 
   @override
-  String get aboutMlKitTranslation => 'Traduction sur l\'appareil';
+  String get aboutMlKitTextRecognitionDesc =>
+      'Utilise la reconnaissance de texte ML Kit sur l\'appareil pour detecter et extraire le texte des images. Fonctionne hors ligne pour des resultats instantanes.';
 
   @override
-  String get aboutAiServiceTitle => 'Service IA';
+  String get aboutMlKitTextRecognitionLink =>
+      'https://developers.google.com/ml-kit/vision/text-recognition';
 
   @override
-  String get aboutAiServiceGemini => 'API Gemini';
+  String get aboutMlKitTranslation => 'Traduction linguistique';
+
+  @override
+  String get aboutMlKitTranslationDesc =>
+      'Utilise la traduction ML Kit sur l\'appareil pour traduire le texte extrait entre langues. Rapide et confidentiel.';
+
+  @override
+  String get aboutMlKitTranslationLink =>
+      'https://developers.google.com/ml-kit/language/translation';
+
+  @override
+  String get aboutAiServiceTitle => 'Comprehension IA';
+
+  @override
+  String get aboutAiServiceGemini => 'Gemini IA';
+
+  @override
+  String get aboutAiServiceGeminiDesc =>
+      'Gemini analyse le texte extrait pour repondre a vos questions et vous aider a comprendre les documents. Propulse par Google AI.';
+
+  @override
+  String get aboutAiServiceGeminiLink => 'https://ai.google.dev/gemini-api';
+
+  @override
+  String get aboutPrivacyTitle => 'Confidentialite et securite';
+
+  @override
+  String get aboutPrivacyDesc =>
+      'Les fonctionnalites ML Kit s\'executent sur votre appareil si possible. Vos donnees sont traitees en toute securite et aucune information sensible n\'est stockee inutilement.';
+
+  @override
+  String get aboutLearnMore => 'En savoir plus';
 
   @override
   String get aboutTargetUsersTitle => 'Utilisateurs cibles';
@@ -427,14 +456,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get galleryEmpty => 'Aucune image pour le moment.';
 
   @override
-  String get savedWordsDeleteTitle => 'Supprimer le mot enregistre ?';
-
-  @override
-  String savedWordsDeleteMessage(Object word) {
-    return 'Supprimer \"$word\" de vos mots enregistres ?';
-  }
-
-  @override
   String get historyDeleteTitle => 'Supprimer l\'element d\'historique ?';
 
   @override
@@ -443,12 +464,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get historyTitle => 'Historique';
-
-  @override
-  String get historyTab => 'Historique';
-
-  @override
-  String get savedWordsTab => 'Mots enregistres';
 
   @override
   String get historyLoadFailed => 'Impossible de charger l\'historique.';
@@ -467,16 +482,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get historySaveFailed => 'Echec de l\'enregistrement.';
-
-  @override
-  String get savedWordsSearchHint => 'Rechercher des mots enregistres';
-
-  @override
-  String get savedWordsLoadFailed =>
-      'Impossible de charger les mots enregistres.';
-
-  @override
-  String get savedWordsEmpty => 'Aucun mot enregistre pour le moment.';
 
   @override
   String get timeJustNow => 'A l\'instant';
@@ -627,40 +632,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Modifiez le texte si l\'OCR a manque quelque chose avant de traduire ou demander a l\'IA.';
 
   @override
-  String get saveWordsNoText => 'Aucun texte a enregistrer.';
-
-  @override
-  String get saveWordsSelectOrTypeError =>
-      'Selectionnez un mot/une phrase ou saisissez-en un.';
-
-  @override
-  String get saveWordsLengthError =>
-      'La longueur doit etre entre 2 et 120 caracteres.';
-
-  @override
-  String get saveWordsAlreadySaved => 'Deja enregistre.';
-
-  @override
-  String get saveWordsSaved => 'Enregistre.';
-
-  @override
-  String get saveWordsFailed => 'Echec de l\'enregistrement, reessayez.';
-
-  @override
-  String get saveWordsTitle => 'Enregistrer des mots';
-
-  @override
-  String get saveWordsInstruction =>
-      'Selectionnez un mot ou une phrase dans le texte ci-dessus, ou saisissez-en un ci-dessous.';
-
-  @override
-  String get saveWordsHint => 'Saisissez un mot ou une phrase a enregistrer';
-
-  @override
   String get historySaveAction => 'Enregistrer l\'historique';
-
-  @override
-  String get saveWordsAction => 'Enregistrer des mots';
 
   @override
   String get actionHome => 'Accueil';
