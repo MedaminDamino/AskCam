@@ -9,8 +9,15 @@ import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_radius.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/app_text_field.dart';
+import 'package:askcam/core/ui/section_header.dart';
+import 'package:askcam/core/ui/empty_state_widget.dart';
 
 class AskAiPage extends StatefulWidget {
   final AskAiArgs args;
@@ -64,7 +71,7 @@ class _AskAiPageState extends State<AskAiPage> {
         [AppRuntimeConfig.keyAiApiKey],
       );
       final message =
-          'AI is not configured. Please run the app with $args';
+          context.l10n.aiNotConfigured(args);
       setState(() {
         _answer = message;
         _isConfigMissing = true;
@@ -92,7 +99,7 @@ class _AskAiPageState extends State<AskAiPage> {
         );
       } else {
         if (imageBytes == null || imageBytes.isEmpty) {
-          _showSnackBar('No image available for AI analysis.');
+          _showSnackBar(context.l10n.aiNoImageAvailable);
           setState(() => _isAsking = false);
           return;
         }
@@ -106,10 +113,11 @@ class _AskAiPageState extends State<AskAiPage> {
       }
       if (!mounted) return;
       if (!result.ok) {
-        final message = result.message;
+        final isConfigError = _isConfigErrorMessage(result.message);
+        final message = _localizeAiError(result.message);
         setState(() {
           _answer = message;
-          _isConfigMissing = _isConfigErrorMessage(message);
+          _isConfigMissing = isConfigError;
         });
         _showSnackBar(message);
         return;
@@ -117,7 +125,7 @@ class _AskAiPageState extends State<AskAiPage> {
       setState(() {
         final cleaned = result.message.trim();
         _answer = _isUnhelpfulAnswer(cleaned)
-            ? "I couldn't detect readable text or a clear question in this image. Please try another image or crop the area you want."
+            ? context.l10n.aiUnclearImage
             : cleaned;
       });
     } catch (e, stackTrace) {
@@ -126,12 +134,10 @@ class _AskAiPageState extends State<AskAiPage> {
         debugPrintStack(stackTrace: stackTrace);
       }
       if (!mounted) return;
-      const message =
-          'We could not reach the AI service right now. Please try again later.';
       setState(() {
-        _answer = message;
+        _answer = context.l10n.aiServiceUnavailable;
       });
-      _showSnackBar(message);
+      _showSnackBar(context.l10n.aiServiceUnavailable);
     } finally {
       if (!mounted) return;
       setState(() => _isAsking = false);
@@ -141,7 +147,7 @@ class _AskAiPageState extends State<AskAiPage> {
   void _copyAnswer() {
     if (_answer.trim().isEmpty) return;
     Clipboard.setData(ClipboardData(text: _answer));
-    _showSnackBar('AI answer copied to clipboard.');
+    _showSnackBar(context.l10n.aiAnswerCopied);
   }
 
   void _showSnackBar(String message) {
@@ -160,17 +166,11 @@ class _AskAiPageState extends State<AskAiPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Ask AI',
-          style: GoogleFonts.poppins(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text(context.l10n.aiAskTitle),
         iconTheme: IconThemeData(color: colors.onBackground),
         actions: [
           IconButton(
-            tooltip: 'Copy answer',
+            tooltip: context.l10n.actionCopy,
             onPressed: ButtonFeedbackService.wrap(
               context,
               _answer.trim().isEmpty ? null : _copyAnswer,
@@ -182,7 +182,7 @@ class _AskAiPageState extends State<AskAiPage> {
               context,
               () => Navigator.pop(context),
             ),
-            child: const Text('Back'),
+            child: Text(context.l10n.actionBack),
           ),
           const ThemeToggleButton(),
         ],
@@ -190,98 +190,52 @@ class _AskAiPageState extends State<AskAiPage> {
       body: SafeArea(
         child: hasImage
             ? SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: AppSpacing.all(AppSpacing.xl),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildImagePreview(colors),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Ask a question',
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
+                    SizedBox(height: AppSpacing.xl),
+                    SectionHeader(title: context.l10n.aiAskQuestionTitle),
+                    AppTextField(
                       controller: _questionController,
                       minLines: 2,
                       maxLines: 4,
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurface,
-                        fontSize: 14,
-                      ),
-                      decoration: InputDecoration(
-                        hintText:
-                            'Optional: ask AI about the extracted text / image...',
-                        hintStyle: GoogleFonts.poppins(
-                          color: colors.onSurfaceVariant,
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: colors.surfaceVariant.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                      hintText: context.l10n.aiAskQuestionHint,
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 50,
-                      child: ElevatedButton.icon(
-                        onPressed: ButtonFeedbackService.wrap(
-                          context,
-                          (_isAsking || _isConfigMissing) ? null : _askAi,
-                        ),
-                        icon: _isAsking
-                            ? SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colors.onPrimary,
-                                ),
-                              )
-                            : const Icon(Icons.auto_awesome_rounded),
-                        label: Text(_isAsking ? 'Asking AI...' : 'Ask AI'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.primary,
-                          foregroundColor: colors.onPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                    SizedBox(height: AppSpacing.lg),
+                    AppButton.primary(
+                      label:
+                          _isAsking ? context.l10n.aiAsking : context.l10n.aiAsk,
+                      onPressed: ButtonFeedbackService.wrap(
+                        context,
+                        (_isAsking || _isConfigMissing) ? null : _askAi,
                       ),
+                      icon: _isAsking
+                          ? SizedBox(
+                              width: AppSpacing.lg,
+                              height: AppSpacing.lg,
+                              child: CircularProgressIndicator(
+                                strokeWidth: AppSpacing.xs,
+                                color: colors.onPrimary,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome_rounded),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'AI answer',
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        color: colors.surface,
-                        border: Border.all(color: colors.outlineVariant),
-                      ),
+                    SizedBox(height: AppSpacing.xl),
+                    SectionHeader(title: context.l10n.aiAnswerTitle),
+                    AppCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Row(
                             children: [
                               Text(
-                                'Response',
-                                style: GoogleFonts.poppins(
-                                  color: colors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                context.l10n.aiResponseLabel,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(color: colors.primary),
                               ),
                               const Spacer(),
                               IconButton(
@@ -293,67 +247,39 @@ class _AskAiPageState extends State<AskAiPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppSpacing.sm),
                           Text(
                             _answer.isEmpty
-                                ? 'AI response will appear here.'
+                                ? context.l10n.aiResponsePlaceholder
                                 : _answer,
-                            style: GoogleFonts.poppins(
-                              color: colors.onSurface,
-                              fontSize: 14,
-                              height: 1.5,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        onPressed: ButtonFeedbackService.wrap(
-                          context,
-                          () => Navigator.pop(context),
-                        ),
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        label: const Text('Back to Extract'),
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                    SizedBox(height: AppSpacing.xl),
+                    AppButton.secondary(
+                      label: context.l10n.actionBackToExtract,
+                      onPressed: ButtonFeedbackService.wrap(
+                        context,
+                        () => Navigator.pop(context),
                       ),
+                      icon: const Icon(Icons.arrow_back_rounded),
                     ),
                   ],
                 ),
               )
-            : Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.image_not_supported,
-                          size: 48, color: colors.onSurfaceVariant),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No image provided',
-                        style: GoogleFonts.poppins(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: ButtonFeedbackService.wrap(
-                          context,
-                          () => Navigator.pop(context),
-                        ),
-                        icon: const Icon(Icons.arrow_back_rounded),
-                        label: const Text('Back to Extract'),
-                      ),
-                    ],
+            : EmptyStateWidget(
+                icon: Icons.image_not_supported,
+                title: context.l10n.aiNoImageProvided,
+                message: context.l10n.aiEmptyHint,
+                action: AppButton.secondary(
+                  label: context.l10n.actionBackToExtract,
+                  onPressed: ButtonFeedbackService.wrap(
+                    context,
+                    () => Navigator.pop(context),
                   ),
+                  icon: const Icon(Icons.arrow_back_rounded),
                 ),
               ),
       ),
@@ -372,17 +298,17 @@ class _AskAiPageState extends State<AskAiPage> {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.circular(AppRadius.lg),
         boxShadow: [
           BoxShadow(
             color: colors.shadow.withOpacity(0.15),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            blurRadius: AppSpacing.xl,
+            offset: Offset(0, AppSpacing.sm),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.circular(AppRadius.lg),
         child: Image.memory(
           bytes,
           fit: BoxFit.cover,
@@ -409,6 +335,25 @@ class _AskAiPageState extends State<AskAiPage> {
         lower.contains('ai base url is missing') ||
         lower.contains('ai model is missing') ||
         lower.contains('ai_api_key');
+  }
+
+  String _localizeAiError(String message) {
+    final lower = message.toLowerCase();
+    if (_isConfigErrorMessage(message)) {
+      final args = AppRuntimeConfig.buildRunArgs(
+        [AppRuntimeConfig.keyAiApiKey],
+      );
+      return context.l10n.aiNotConfigured(args);
+    }
+    if (lower.contains('did not return') || lower.contains('no answer')) {
+      return context.l10n.aiNoAnswerFallback;
+    }
+    if (lower.contains('network error') ||
+        lower.contains('request failed') ||
+        lower.contains('response parsing')) {
+      return context.l10n.aiServiceUnavailable;
+    }
+    return context.l10n.aiServiceUnavailable;
   }
 
   Future<Uint8List?> _resolveImageBytes() async {

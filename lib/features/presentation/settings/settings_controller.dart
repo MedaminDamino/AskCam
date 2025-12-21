@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:askcam/core/utils/settings_storage.dart';
+import 'package:flutter/widgets.dart';
 
 class SettingsController extends ChangeNotifier {
   final SettingsStorage _storage;
@@ -12,6 +13,7 @@ class SettingsController extends ChangeNotifier {
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
   bool _silentMode = false;
+  bool _reminderEnabled = false;
   bool _isLoaded = false;
 
   String get languageCode => _languageCode;
@@ -20,12 +22,10 @@ class SettingsController extends ChangeNotifier {
   bool get soundEnabled => _soundEnabled;
   bool get vibrationEnabled => _vibrationEnabled;
   bool get silentMode => _silentMode;
+  bool get reminderEnabled => _reminderEnabled;
   bool get isLoaded => _isLoaded;
 
-  static const Map<String, String> supportedLanguages = {
-    'en': 'English',
-    'fr': 'French',
-  };
+  static const List<String> supportedLanguageCodes = ['en', 'fr', 'ar'];
 
   Future<void> load() async {
     final storedLanguage = await _storage.readLanguageCode();
@@ -34,21 +34,29 @@ class SettingsController extends ChangeNotifier {
     final storedSound = await _storage.readSoundEnabled();
     final storedVibration = await _storage.readVibrationEnabled();
     final storedSilent = await _storage.readSilentMode();
+    final storedReminder = await _storage.readReminderEnabled();
 
-    _languageCode = supportedLanguages.containsKey(storedLanguage)
-        ? storedLanguage!
+    final systemCode =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    final fallbackCode = supportedLanguageCodes.contains(systemCode)
+        ? systemCode
         : 'en';
+    _languageCode = storedLanguage != null &&
+            supportedLanguageCodes.contains(storedLanguage)
+        ? storedLanguage
+        : fallbackCode;
     _autoEnhanceImages = storedEnhance ?? true;
     _autoDetectLanguage = storedDetect ?? true;
     _soundEnabled = storedSound ?? true;
     _vibrationEnabled = storedVibration ?? true;
     _silentMode = storedSilent ?? false;
+    _reminderEnabled = storedReminder ?? false;
     _isLoaded = true;
     notifyListeners();
   }
 
   Future<void> setLanguageCode(String code) async {
-    if (!supportedLanguages.containsKey(code)) return;
+    if (!supportedLanguageCodes.contains(code)) return;
     if (_languageCode == code) return;
     _languageCode = code;
     notifyListeners();
@@ -88,5 +96,12 @@ class SettingsController extends ChangeNotifier {
     _silentMode = value;
     notifyListeners();
     await _storage.writeSilentMode(value);
+  }
+
+  Future<void> setReminderEnabled(bool value) async {
+    if (_reminderEnabled == value) return;
+    _reminderEnabled = value;
+    notifyListeners();
+    await _storage.writeReminderEnabled(value);
   }
 }

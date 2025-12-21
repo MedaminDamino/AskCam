@@ -1,0 +1,304 @@
+{
+  "@@locale": "ar",
+  "appTitle": "AskCam",
+  "reminderTitle": "📸 تذكير AskCam",
+  "reminderBody": "امسح مستنداتك وافهمها باستخدام AskCam.",
+  "reminderChannelName": "تذكيرات AskCam",
+  "reminderChannelDescription": "تذكيرات دورية لاستخدام AskCam.",
+  "tooltipLightMode": "الوضع الفاتح",
+  "tooltipDarkMode": "الوضع الداكن",
+  "authErrorMessage": "خطأ في المصادقة: {message}",
+  "@authErrorMessage": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "routeErrorTitle": "خطأ",
+  "routeErrorHeading": "عذرًا! حدث خطأ ما",
+  "routeErrorRoute": "المسار: {route}",
+  "@routeErrorRoute": {
+    "placeholders": {
+      "route": {}
+    }
+  },
+  "routeErrorGoHome": "اذهب إلى الرئيسية",
+  "routeErrorNoImage": "لم يتم توفير ملف صورة",
+  "routeErrorInvalidArgs": "وسائط غير صالحة: {argType}",
+  "@routeErrorInvalidArgs": {
+    "placeholders": {
+      "argType": {}
+    }
+  },
+  "routeErrorImageNotFound": "لم يتم العثور على ملف الصورة",
+  "routeErrorMissingTranslate": "وسائط الترجمة مفقودة",
+  "routeErrorMissingAi": "وسائط الذكاء الاصطناعي مفقودة",
+  "routeErrorNotFound": "المسار غير موجود",
+  "validationEmailRequired": "البريد الإلكتروني مطلوب",
+  "validationEmailInvalid": "أدخل بريدًا إلكترونيًا صالحًا",
+  "validationPasswordRequired": "كلمة المرور مطلوبة",
+  "validationPasswordMinLength": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+  "validationPasswordUppercase": "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل",
+  "validationPasswordNumber": "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل",
+  "validationFieldRequired": "{field} مطلوب",
+  "@validationFieldRequired": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "validationFieldMinLength": "يجب أن يحتوي {field} على حرفين على الأقل",
+  "@validationFieldMinLength": {
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "validationConfirmPasswordRequired": "يرجى تأكيد كلمة المرور",
+  "validationPasswordMismatch": "كلمتا المرور غير متطابقتين",
+  "authSignInFailed": "فشل تسجيل الدخول. حاول مرة أخرى.",
+  "authSignInCancelled": "تم إلغاء تسجيل الدخول.",
+  "authGoogleSignInFailed": "فشل تسجيل الدخول عبر Google. حاول مرة أخرى.",
+  "authRegistrationFailed": "فشل التسجيل. حاول مرة أخرى.",
+  "authResetFailed": "فشلت إعادة التعيين. حاول مرة أخرى.",
+  "authSignOutFailed": "تعذر تسجيل الخروج. حاول مرة أخرى.",
+  "authErrorInvalidEmail": "عنوان البريد الإلكتروني غير صالح.",
+  "authErrorUserNotFound": "لا يوجد مستخدم بهذا البريد الإلكتروني.",
+  "authErrorWrongPassword": "كلمة المرور غير صحيحة. حاول مرة أخرى.",
+  "authErrorEmailInUse": "يوجد حساب بالفعل لهذا البريد الإلكتروني.",
+  "authErrorWeakPassword": "كلمة المرور ضعيفة جدًا. استخدم 8 أحرف على الأقل، وحرفًا كبيرًا واحدًا، ورقمًا واحدًا.",
+  "authErrorInvalidCredential": "بيانات الاعتماد غير صالحة. تحقق من البريد وكلمة المرور.",
+  "authErrorAccountExistsDifferentMethod": "يوجد حساب بالفعل بطريقة تسجيل مختلفة.",
+  "authErrorOperationNotAllowed": "تسجيل الدخول بالبريد وكلمة المرور معطل لهذا المشروع.",
+  "authErrorUserDisabled": "تم تعطيل هذا الحساب.",
+  "authErrorPopupBlocked": "تم حظر النافذة المنبثقة. اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى.",
+  "authErrorTooManyRequests": "محاولات كثيرة جدًا. حاول لاحقًا.",
+  "authErrorInvalidApiKey": "مفتاح Firebase API غير صالح. تحقق من إعدادات الويب.",
+  "authErrorNetwork": "خطأ في الشبكة. تحقق من الاتصال وحاول مرة أخرى.",
+  "authErrorGeneric": "فشلت المصادقة ({code}). حاول مرة أخرى.",
+  "@authErrorGeneric": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "authErrorGoogleConfig": "خطأ في إعدادات تسجيل Google (SHA/الحزمة/OAuth).",
+  "authErrorGoogleSignIn": "فشل تسجيل الدخول عبر Google ({code}). حاول مرة أخرى.",
+  "@authErrorGoogleSignIn": {
+    "placeholders": {
+      "code": {}
+    }
+  },
+  "fieldFirstName": "الاسم الأول",
+  "fieldLastName": "اسم العائلة",
+  "fieldEmail": "البريد الإلكتروني",
+  "fieldPassword": "كلمة المرور",
+  "fieldConfirmPassword": "تأكيد كلمة المرور",
+  "authAccountCreated": "تم إنشاء الحساب بنجاح.",
+  "authRegisterSubtitle": "انضم إلى AskCam في بضع خطوات",
+  "authAlreadyHaveAccount": "لديك حساب بالفعل؟",
+  "authSignIn": "تسجيل الدخول",
+  "googleSignInButton": "المتابعة باستخدام Google",
+  "authWelcomeBack": "مرحبًا بعودتك",
+  "authSignInToContinue": "سجل الدخول للمتابعة",
+  "authForgotPassword": "هل نسيت كلمة المرور؟",
+  "authNewHere": "جديد هنا؟",
+  "authCreateAccount": "إنشاء حساب",
+  "authLoginFailed": "فشل تسجيل الدخول.",
+  "authResetEmailSent": "تم إرسال رسالة إعادة تعيين كلمة المرور.",
+  "authRequestFailed": "فشل الطلب.",
+  "authResetPasswordTitle": "إعادة تعيين كلمة المرور",
+  "authResetPasswordSubtitle": "أدخل بريدك الإلكتروني وسنرسل رابط إعادة التعيين.",
+  "authResetPasswordAction": "إرسال رابط إعادة التعيين",
+  "authLogout": "تسجيل الخروج",
+  "authLogoutConfirmation": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+  "authLogoutFailed": "فشل تسجيل الخروج.",
+  "authLoginRequiredToViewGallery": "يرجى تسجيل الدخول لعرض المعرض.",
+  "authLoginRequiredToViewHistory": "يرجى تسجيل الدخول لعرض السجل.",
+  "authLoginRequiredToSaveImages": "يرجى تسجيل الدخول لحفظ الصور.",
+  "authLoginRequiredToSaveWords": "يرجى تسجيل الدخول لحفظ الكلمات.",
+  "authLoginRequiredToSaveHistory": "يرجى تسجيل الدخول لحفظ السجل.",
+  "authGoToLogin": "اذهب إلى تسجيل الدخول",
+  "aiNotConfigured": "الذكاء الاصطناعي غير مُهيأ. شغّل التطبيق باستخدام {args}",
+  "@aiNotConfigured": {
+    "placeholders": {
+      "args": {}
+    }
+  },
+  "aiNoImageAvailable": "لا توجد صورة متاحة لتحليل الذكاء الاصطناعي.",
+  "aiUnclearImage": "تعذر اكتشاف نص مقروء أو سؤال واضح في هذه الصورة. جرّب صورة أخرى أو قص الجزء المطلوب.",
+  "aiServiceUnavailable": "لا يمكن الوصول إلى خدمة الذكاء الاصطناعي حاليًا. حاول لاحقًا.",
+  "aiAnswerCopied": "تم نسخ إجابة الذكاء الاصطناعي.",
+  "aiAskTitle": "اسأل الذكاء الاصطناعي",
+  "aiAskQuestionTitle": "اطرح سؤالًا",
+  "aiAskQuestionHint": "اختياري: اسأل الذكاء الاصطناعي عن النص المستخرج/الصورة...",
+  "aiAsking": "جارٍ سؤال الذكاء الاصطناعي...",
+  "aiAsk": "اسأل الذكاء الاصطناعي",
+  "aiAskAboutThis": "اسأل الذكاء الاصطناعي عن هذا",
+  "aiAnswerTitle": "إجابة الذكاء الاصطناعي",
+  "aiResponseLabel": "الرد",
+  "aiResponsePlaceholder": "ستظهر إجابة الذكاء الاصطناعي هنا.",
+  "aiNoImageProvided": "لم يتم توفير صورة",
+  "aiNoAnswerFallback": "لم يتمكن الذكاء الاصطناعي من تقديم إجابة. حاول مرة أخرى.",
+  "aiEmptyHint": "اسأل الذكاء الاصطناعي لعرض شروحات خطوة بخطوة أو تلميحات هنا.",
+  "aiWaitingResponse": "بانتظار رد مساعد الذكاء الاصطناعي...",
+  "cameraPickImageError": "خطأ أثناء اختيار الصورة: {error}",
+  "@cameraPickImageError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "cameraTitle": "التقاط اللحظة",
+  "cameraClearImage": "مسح الصورة",
+  "cameraNoImageSelected": "لم يتم اختيار صورة",
+  "cameraEmptyHint": "اضغط الأزرار بالأسفل للبدء",
+  "cameraImageCaptured": "تم التقاط الصورة بنجاح",
+  "cameraGallery": "المعرض",
+  "cameraCamera": "الكاميرا",
+  "cameraScanWithAi": "مسح النص بالذكاء الاصطناعي",
+  "aboutApplication": "حول التطبيق",
+  "aboutDescription": "AskCam هو تطبيق Flutter للهواتف يتيح للمستخدمين التقاط أو تحميل الصور، واستخراج النص باستخدام ML Kit OCR، وترجمة النص المستخرج، وطرح أسئلة على الذكاء الاصطناعي لفهم المستندات والواجبات بشكل أفضل.",
+  "aboutMlKitServicesTitle": "خدمات ML Kit المستخدمة",
+  "aboutMlKitTextRecognition": "التعرّف على النص (OCR)",
+  "aboutMlKitTranslation": "الترجمة على الجهاز",
+  "aboutAiServiceTitle": "خدمة الذكاء الاصطناعي",
+  "aboutAiServiceGemini": "واجهة Gemini",
+  "aboutTargetUsersTitle": "الفئة المستهدفة",
+  "aboutTargetUsersStudents": "الطلاب والمتعلمون",
+  "galleryDeleteTitle": "حذف الصورة؟",
+  "galleryDeleteMessage": "إزالة هذه الصورة من المعرض؟",
+  "galleryImageLoadFailed": "تعذر تحميل الصورة.",
+  "galleryTitle": "المعرض",
+  "galleryLoadFailed": "تعذر تحميل المعرض.",
+  "galleryEmpty": "لا توجد صور بعد.",
+  "savedWordsDeleteTitle": "حذف الكلمة المحفوظة؟",
+  "savedWordsDeleteMessage": "إزالة \"{word}\" من الكلمات المحفوظة؟",
+  "@savedWordsDeleteMessage": {
+    "placeholders": {
+      "word": {}
+    }
+  },
+  "historyDeleteTitle": "حذف عنصر السجل؟",
+  "historyDeleteMessage": "إزالة هذا الاستخراج من السجل؟",
+  "historyTitle": "السجل",
+  "historyTab": "السجل",
+  "savedWordsTab": "الكلمات المحفوظة",
+  "historyLoadFailed": "تعذر تحميل السجل.",
+  "historyEmpty": "لا يوجد سجل بعد.",
+  "historyNoExtractedText": "لا يوجد نص مستخرج",
+  "historyNoText": "لا يوجد نص للحفظ بعد.",
+  "historySaved": "تم الحفظ في السجل.",
+  "historySaveFailed": "فشل الحفظ.",
+  "savedWordsSearchHint": "البحث في الكلمات المحفوظة",
+  "savedWordsLoadFailed": "تعذر تحميل الكلمات المحفوظة.",
+  "savedWordsEmpty": "لا توجد كلمات محفوظة بعد.",
+  "timeJustNow": "الآن",
+  "notificationsEnabled": "الإشعارات مفعلة",
+  "notificationsDisabled": "الإشعارات معطلة",
+  "language": "اللغة",
+  "languageEnglish": "الإنجليزية",
+  "languageFrench": "الفرنسية",
+  "languageArabic": "العربية",
+  "homeWelcome": "مرحبًا بك في",
+  "homeTagline": "التقط، حلل، واكتشف رؤى من صورك",
+  "homeCamera": "الكاميرا",
+  "homeCameraSubtitle": "التقط صورة",
+  "homeGallery": "المعرض",
+  "homeGallerySubtitle": "تصفّح الصور",
+  "homeHistory": "السجل",
+  "homeHistorySubtitle": "عمليات مسح سابقة",
+  "homeSettings": "الإعدادات",
+  "homeSettingsSubtitle": "التفضيلات",
+  "reminderPermissionDenied": "تم رفض إذن الإشعارات.",
+  "ocrErrorUnableToRead": "تعذر قراءة هذه الصورة. التقطها مجددًا بإضاءة أفضل.",
+  "ocrUnableToExtract": "تعذر استخراج النص. جرّب صورة أخرى.",
+  "ocrOriginalText": "النص الأصلي",
+  "ocrExtractingHint": "نقوم باستخراج النص من الصورة. يرجى الانتظار.",
+  "ocrTranslatedTextTitle": "النص المترجم ({lang})",
+  "@ocrTranslatedTextTitle": {
+    "placeholders": {
+      "lang": {}
+    }
+  },
+  "translationWaitingForOcr": "ستظهر الترجمة بعد اكتمال التعرف على النص.",
+  "translationInProgress": "جارٍ الترجمة إلى {language}...",
+  "@translationInProgress": {
+    "placeholders": {
+      "language": {}
+    }
+  },
+  "translateInto": "ترجم إلى:",
+  "translationAutoReapplyHint": "تغيير هذا الخيار يعيد ترجمة النص المكتشف تلقائيًا.",
+  "translationUnavailableFallback": "الترجمة غير متاحة حاليًا. سيتم عرض النص المكتشف.",
+  "translationUnavailableOriginal": "الترجمة غير متاحة حاليًا. سيتم عرض النص الأصلي.",
+  "translationFailedTryAgain": "تعذرت الترجمة. حاول مرة أخرى.",
+  "translationCopied": "تم نسخ النص المترجم.",
+  "translationInProgressShort": "جارٍ الترجمة...",
+  "translationOutputPlaceholder": "ستظهر الترجمة هنا.",
+  "translationNoText": "لا يوجد نص للترجمة بعد.",
+  "translateTitle": "ترجمة",
+  "translateInputTitle": "نص للترجمة",
+  "translateInputHint": "عدّل النص المراد ترجمته...",
+  "translateAction": "ترجمة",
+  "translateOutputTitle": "الناتج المترجم",
+  "ocrExtractResultTitle": "نتيجة الاستخراج",
+  "ocrOriginalExtractedText": "النص المستخرج الأصلي",
+  "ocrExtractingText": "جارٍ استخراج النص...",
+  "ocrRunning": "التعرف على النص يعمل...",
+  "ocrEditHint": "عدّل النص المستخرج هنا.",
+  "ocrEditInstruction": "عدّل النص إذا فات التعرف على شيء قبل الترجمة أو سؤال الذكاء الاصطناعي.",
+  "saveWordsNoText": "لا يوجد نص للحفظ بعد.",
+  "saveWordsSelectOrTypeError": "حدد كلمة/عبارة أولًا أو اكتب واحدة.",
+  "saveWordsLengthError": "يجب أن يكون طول الكلمة بين 2 و120 حرفًا.",
+  "saveWordsAlreadySaved": "تم حفظها بالفعل.",
+  "saveWordsSaved": "تم الحفظ.",
+  "saveWordsFailed": "فشل الحفظ، حاول مرة أخرى.",
+  "saveWordsTitle": "حفظ الكلمات",
+  "saveWordsInstruction": "حدد كلمة أو عبارة من النص أعلاه أو اكتب واحدة أدناه.",
+  "saveWordsHint": "اكتب كلمة أو عبارة للحفظ",
+  "historySaveAction": "حفظ السجل",
+  "saveWordsAction": "حفظ الكلمات",
+  "actionHome": "الرئيسية",
+  "actionTranslate": "ترجمة",
+  "actionAskAi": "اسأل الذكاء الاصطناعي",
+  "actionSave": "حفظ",
+  "actionRetry": "إعادة المحاولة",
+  "actionCopy": "نسخ",
+  "actionBack": "رجوع",
+  "actionBackToExtract": "العودة إلى الاستخراج",
+  "actionCancel": "إلغاء",
+  "actionDelete": "حذف",
+  "actionDeleted": "تم الحذف.",
+  "actionDeleteFailed": "فشل الحذف. حاول مرة أخرى.",
+  "actionCopied": "تم النسخ إلى الحافظة.",
+  "uploadingImage": "جارٍ رفع الصورة إلى السحابة...",
+  "uploadFailedTryAgain": "فشل الرفع. حاول مرة أخرى.",
+  "errorNoInternetConnection": "لا يوجد اتصال بالإنترنت",
+  "cloudinaryNotConfigured": "Cloudinary غير مُهيأ. شغّل التطبيق باستخدام {args}",
+  "@cloudinaryNotConfigured": {
+    "placeholders": {
+      "args": {}
+    }
+  },
+  "settingsTitle": "الإعدادات",
+  "settingsSectionPreferences": "التفضيلات",
+  "settingsTheme": "السمة",
+  "settingsDarkMode": "الوضع الداكن",
+  "settingsSectionFeedback": "الصوت والاهتزاز",
+  "settingsSilentMode": "الوضع الصامت",
+  "settingsSilentModeHint": "الوضع الصامت يعطل الصوت والاهتزاز.",
+  "settingsSoundEnabled": "أصوات الأزرار",
+  "settingsVibrationEnabled": "الاهتزاز",
+  "settingsSectionReminders": "التذكيرات",
+  "settingsReminderToggle": "تذكير الاستخدام",
+  "settingsReminderHint": "احصل على تذكير كل 15 دقيقة.",
+  "settingsSectionAbout": "حول",
+  "settingsSectionOcr": "OCR و ML",
+  "settingsAutoEnhanceImages": "تحسين الصور تلقائيًا قبل OCR",
+  "settingsAutoDetectLanguage": "كشف اللغة تلقائيًا",
+  "settingsAutoDetectLanguageHint": "عند التعطيل، يفترض التطبيق اللغة المحددة.",
+  "settingsSectionPrivacy": "الخصوصية والذاكرة المؤقتة",
+  "settingsClearCache": "مسح الذاكرة المؤقتة",
+  "settingsClearCacheWeb": "تم تخطي تنظيف الذاكرة المؤقتة على الويب.",
+  "settingsClearCacheDone": "تم مسح الذاكرة المؤقتة بنجاح.",
+  "settingsClearCacheFail": "تعذر مسح الذاكرة المؤقتة. حاول مرة أخرى.",
+  "settingsSectionAccount": "الحساب",
+  "settingsLoggedInAs": "تم تسجيل الدخول كـ",
+  "placeholderDash": "-"
+}

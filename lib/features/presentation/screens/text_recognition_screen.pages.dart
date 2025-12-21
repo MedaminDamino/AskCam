@@ -7,9 +7,14 @@ import 'package:askcam/features/presentation/settings/settings_controller.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_radius.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/section_header.dart';
 
 /// Screen responsible for OCR + translation + AI assistance for a captured image.
 class TextRecognitionScreen extends StatefulWidget {
@@ -25,14 +30,8 @@ class TextRecognitionScreen extends StatefulWidget {
 }
 
 class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
-  static const Map<String, String> _languageLabels = {
-    'en': 'English (EN)',
-    'fr': 'French (FR)',
-  };
-
   late final TextRecognizer _textRecognizer;
 
-  /// Selected target language for translation & AI answers.
   String _targetLang = 'en';
   String _originalText = '';
   String _translatedText = '';
@@ -60,13 +59,12 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     super.dispose();
   }
 
-  /// Runs the OCR pipeline and automatically translates the result to English.
   Future<void> _runOcrAndTranslation() async {
     setState(() {
       _isOcrLoading = true;
       _isTranslating = false;
       _errorMessage = null;
-       _translationError = null;
+      _translationError = null;
       _originalText = '';
       _translatedText = '';
       _aiAnswer = '';
@@ -99,8 +97,7 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
       debugPrint('$stackTrace');
       if (!mounted) return;
       setState(() {
-        _errorMessage =
-            'We could not read this photo. Please retake it in better lighting.';
+        _errorMessage = context.l10n.ocrErrorUnableToRead;
         _isOcrLoading = false;
         _isTranslating = false;
         _translatedText = '';
@@ -108,7 +105,6 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     }
   }
 
-  /// Cleans up OCR text to remove awkward spacing.
   String _postProcess(String value) {
     final normalized = value
         .replaceAll(RegExp(r' +'), ' ')
@@ -129,7 +125,6 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     return lines.join('\n');
   }
 
-  /// Translates [_originalText] into the selected [_targetLang].
   Future<void> _translateCurrentText() async {
     if (_originalText.trim().isEmpty) {
       setState(() {
@@ -167,14 +162,12 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
       if (!mounted) return;
       setState(() {
         _translatedText = _originalText;
-        _translationError =
-            'Translation unavailable right now. Showing the detected text instead.';
+        _translationError = context.l10n.translationUnavailableFallback;
         _isTranslating = false;
       });
     }
   }
 
-  /// Handles language dropdown updates and re-runs translation when needed.
   void _onLanguageChanged(String? code) {
     if (code == null || code == _targetLang) return;
     setState(() {
@@ -184,10 +177,18 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     _translateCurrentText();
   }
 
-  String _languageLabelForCode(String code) =>
-      _languageLabels[code] ?? code.toUpperCase();
+  String _languageLabelForCode(BuildContext context, String code) {
+    final l10n = context.l10n;
+    switch (code) {
+      case 'fr':
+        return l10n.languageFrench;
+      case 'ar':
+        return l10n.languageArabic;
+      default:
+        return l10n.languageEnglish;
+    }
+  }
 
-  /// Sends the translated text to the AI assistant for contextual help.
   Future<void> _askAiAboutText() async {
     if (_translatedText.trim().isEmpty || _isAskingAi) return;
 
@@ -206,17 +207,15 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
           return;
         }
         final cleaned = result.message.trim();
-        _aiAnswer = cleaned.isEmpty
-            ? 'The AI could not come up with an answer. Please try again.'
-            : cleaned;
+        _aiAnswer =
+            cleaned.isEmpty ? context.l10n.aiNoAnswerFallback : cleaned;
       });
     } catch (error, stackTrace) {
       debugPrint('TextRecognitionScreen AI error: $error');
       debugPrint('$stackTrace');
       if (!mounted) return;
       setState(() {
-        _aiAnswer =
-            'We could not reach the AI service right now. Please try again later.';
+        _aiAnswer = context.l10n.aiServiceUnavailable;
       });
     } finally {
       if (!mounted) return;
@@ -226,21 +225,12 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'AskCam',
-          style: GoogleFonts.poppins(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        iconTheme: IconThemeData(color: colors.onBackground),
+        title: Text(context.l10n.appTitle),
         actions: const [
           ThemeToggleButton(),
         ],
@@ -248,35 +238,38 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: AppSpacing.all(AppSpacing.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildImagePreview(),
-              const SizedBox(height: 24),
+              SizedBox(height: AppSpacing.xl),
               if (_errorMessage != null) _buildErrorBanner(),
               _buildTextSection(
-                title: 'Original text',
+                title: context.l10n.ocrOriginalText,
                 content: _originalText,
                 isLoading: _isOcrLoading,
-                hint: _errorMessage ??
-                    'We are extracting text from the photo. Please hold tight.',
+                hint: _errorMessage ?? context.l10n.ocrExtractingHint,
               ),
-              const SizedBox(height: 18),
+              SizedBox(height: AppSpacing.lg),
               _buildLanguageSelector(),
-              const SizedBox(height: 12),
+              SizedBox(height: AppSpacing.md),
               _buildTextSection(
-                title: 'Translated text (${_targetLang.toUpperCase()})',
+                title: context.l10n.ocrTranslatedTextTitle(
+                  _targetLang.toUpperCase(),
+                ),
                 content: _translatedText,
                 isLoading: _isTranslating,
                 hint: _originalText.isEmpty
-                    ? 'Translation will appear once OCR completes.'
-                    : 'Translating to ${_languageLabelForCode(_targetLang)}...',
+                    ? context.l10n.translationWaitingForOcr
+                    : context.l10n.translationInProgress(
+                        _languageLabelForCode(context, _targetLang),
+                      ),
                 errorText: _translationError,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: AppSpacing.xl),
               _buildAskAiButton(),
-              const SizedBox(height: 16),
+              SizedBox(height: AppSpacing.lg),
               _buildAiAnswerCard(),
             ],
           ),
@@ -286,19 +279,21 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
   }
 
   Widget _buildImagePreview() {
+    final colors = Theme.of(context).colorScheme;
+    final radius = AppRadius.circular(AppRadius.lg);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: radius,
         boxShadow: [
           BoxShadow(
-            color: Colors.cyanAccent.withOpacity(0.25),
-            blurRadius: 18,
-            spreadRadius: 1,
+            color: colors.primary.withOpacity(0.2),
+            blurRadius: AppSpacing.xl,
+            spreadRadius: AppSpacing.xs,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: radius,
         child: Image.file(
           widget.imageFile,
           width: double.infinity,
@@ -310,28 +305,23 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
 
   Widget _buildErrorBanner() {
     final colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colors.error.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.error.withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_rounded, color: colors.error),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _errorMessage!,
-              style: GoogleFonts.poppins(
-                color: colors.error,
-                fontWeight: FontWeight.w600,
+    return Padding(
+      padding: AppSpacing.only(bottom: AppSpacing.md),
+      child: AppCard(
+        child: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: colors.error),
+            SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                _errorMessage!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.error,
+                    ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -343,88 +333,69 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     required String hint,
     String? errorText,
   }) {
+    final textTheme = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sectionGradient = isDark
-        ? const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1F1F3B), Color(0xFF2A2A50)],
-          )
-        : LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [colors.surface, colors.surfaceVariant],
-          );
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: sectionGradient,
-        border: Border.all(color: colors.outlineVariant),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+              Expanded(
+                child: Text(
+                  title,
+                  style: textTheme.titleMedium,
                 ),
               ),
-              const SizedBox(width: 12),
               if (isLoading)
                 SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSpacing.lg,
+                  height: AppSpacing.lg,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2,
+                    strokeWidth: AppSpacing.xs,
                     color: colors.primary,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
-          if (content.isNotEmpty)
-            Container(
-              constraints: const BoxConstraints(minHeight: 100, maxHeight: 260),
-              decoration: BoxDecoration(
-                color: colors.surfaceVariant.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: SelectableText(
-                  content,
-                  style: GoogleFonts.poppins(
-                    color: colors.onSurface,
-                    fontSize: 14,
-                    height: 1.5,
+          SizedBox(height: AppSpacing.md),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: content.isNotEmpty
+                ? Container(
+                    key: const ValueKey('content'),
+                    constraints: const BoxConstraints(
+                      minHeight: 120,
+                      maxHeight: 280,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceVariant,
+                      borderRadius: AppRadius.circular(AppRadius.md),
+                    ),
+                    padding: AppSpacing.all(AppSpacing.md),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: SelectableText(
+                        content,
+                        style: textTheme.bodyMedium,
+                      ),
+                    ),
+                  )
+                : Text(
+                    hint,
+                    key: const ValueKey('hint'),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ),
-            )
-          else
-            Text(
-              hint,
-              style: GoogleFonts.poppins(
-                color: colors.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            ),
+          ),
           if (errorText != null) ...[
-            const SizedBox(height: 10),
+            SizedBox(height: AppSpacing.sm),
             Text(
               errorText,
-              style: GoogleFonts.poppins(
+              style: textTheme.bodySmall?.copyWith(
                 color: colors.tertiary,
-                fontSize: 12,
               ),
             ),
           ],
@@ -433,154 +404,94 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     );
   }
 
-  /// UI dropdown letting users pick the target translation language.
   Widget _buildLanguageSelector() {
-    final colors = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Translate into:',
-          style: GoogleFonts.poppins(
-            color: colors.onSurface,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
+        SectionHeader(title: l10n.translateInto),
+        AppCard(
+          padding: AppSpacing.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.sm,
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: isDark ? const Color(0xFF1F1F3B) : colors.surface,
-            border: Border.all(color: colors.outlineVariant),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _targetLang,
-              dropdownColor: isDark ? const Color(0xFF1F1F3B) : colors.surface,
-              iconEnabledColor: colors.primary,
+              iconEnabledColor: Theme.of(context).colorScheme.primary,
               onChanged: _onLanguageChanged,
-              items: _languageLabels.entries
+              items: SettingsController.supportedLanguageCodes
                   .map(
-                    (entry) => DropdownMenuItem<String>(
-                      value: entry.key,
-                      child: Text(
-                        entry.value,
-                        style: GoogleFonts.poppins(
-                          color: colors.onSurface,
-                          fontSize: 14,
-                        ),
-                      ),
+                    (code) => DropdownMenuItem<String>(
+                      value: code,
+                      child: Text(_languageLabelForCode(context, code)),
                     ),
                   )
                   .toList(),
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: AppSpacing.xs),
         Text(
-          'Changing this option re-translates the detected text automatically.',
-          style: GoogleFonts.poppins(
-            color: colors.onSurfaceVariant,
-            fontSize: 12,
-          ),
+          l10n.translationAutoReapplyHint,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
         ),
       ],
     );
   }
 
   Widget _buildAskAiButton() {
-    final colors = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: 54,
-      child: ElevatedButton(
-        onPressed: ButtonFeedbackService.wrap(
-          context,
-          (_translatedText.trim().isEmpty || _isAskingAi || _isTranslating)
-              ? null
-              : _askAiAboutText,
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colors.primary,
-          disabledBackgroundColor: colors.surfaceVariant,
-          foregroundColor: colors.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: _isAskingAi
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      color: colors.onPrimary,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Asking AI...',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                'Ask AI about this',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+    final l10n = context.l10n;
+    return AppButton.primary(
+      label: _isAskingAi ? l10n.aiAsking : l10n.aiAskAboutThis,
+      onPressed: ButtonFeedbackService.wrap(
+        context,
+        (_translatedText.trim().isEmpty || _isAskingAi || _isTranslating)
+            ? null
+            : _askAiAboutText,
       ),
+      icon: _isAskingAi
+          ? SizedBox(
+              width: AppSpacing.lg,
+              height: AppSpacing.lg,
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.onPrimary,
+                strokeWidth: AppSpacing.xs,
+              ),
+            )
+          : const Icon(Icons.auto_awesome_rounded),
     );
   }
 
   Widget _buildAiAnswerCard() {
     final colors = Theme.of(context).colorScheme;
     final hasAnswer = _aiAnswer.trim().isNotEmpty;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: colors.surface,
-        border: Border.all(color: colors.primary.withOpacity(0.2)),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'AI Answer',
-            style: GoogleFonts.poppins(
-              color: colors.onSurface,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+            context.l10n.aiAnswerTitle,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppSpacing.md),
           if (hasAnswer)
             SelectableText(
               _aiAnswer,
-              style: GoogleFonts.poppins(
-                color: colors.onSurface,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium,
             )
           else
             Text(
               _isAskingAi
-                  ? 'Waiting for the AI assistant to respond...'
-                  : 'Ask AI to see step-by-step explanations or hints here.',
-              style: GoogleFonts.poppins(
-                color: colors.onSurfaceVariant,
-                fontSize: 13,
-              ),
+                  ? context.l10n.aiWaitingResponse
+                  : context.l10n.aiEmptyHint,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
             ),
         ],
       ),

@@ -5,7 +5,11 @@ import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_radius.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/empty_state_widget.dart';
 
 class GalleryScreen extends StatelessWidget {
   const GalleryScreen({super.key});
@@ -24,22 +28,22 @@ class GalleryScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete image?'),
-          content: const Text('Remove this image from your gallery?'),
+          title: Text(context.l10n.galleryDeleteTitle),
+          content: Text(context.l10n.galleryDeleteMessage),
           actions: [
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.pop(dialogContext, false),
               ),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.actionCancel),
             ),
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.pop(dialogContext, true),
               ),
-              child: const Text('Delete'),
+              child: Text(context.l10n.actionDelete),
             ),
           ],
         );
@@ -50,13 +54,13 @@ class GalleryScreen extends StatelessWidget {
     try {
       await GalleryRepository.instance.deleteImage(image.id);
       if (context.mounted) {
-        _showSnackBar(context, 'Deleted.');
+        _showSnackBar(context, context.l10n.actionDeleted);
       }
     } catch (e, stackTrace) {
       debugPrint('Delete image failed: $e');
       debugPrintStack(stackTrace: stackTrace);
       if (context.mounted) {
-        _showSnackBar(context, 'Failed to delete. Please try again.');
+        _showSnackBar(context, context.l10n.actionDeleteFailed);
       }
     }
   }
@@ -65,21 +69,22 @@ class GalleryScreen extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
+        final colors = Theme.of(context).colorScheme;
         return Dialog(
-          insetPadding: const EdgeInsets.all(16),
+          insetPadding: AppSpacing.all(AppSpacing.lg),
           backgroundColor: Colors.transparent,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: AppRadius.circular(AppRadius.lg),
             child: InteractiveViewer(
               child: Image.network(
                 image.url,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Container(
-                  color: Colors.black,
-                  padding: const EdgeInsets.all(24),
-                  child: const Text(
-                    'Unable to load image.',
-                    style: TextStyle(color: Colors.white),
+                  color: colors.scrim,
+                  padding: AppSpacing.all(AppSpacing.xl),
+                  child: Text(
+                    context.l10n.galleryImageLoadFailed,
+                    style: TextStyle(color: colors.onSurface),
                   ),
                 ),
               ),
@@ -100,13 +105,7 @@ class GalleryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Gallery',
-          style: GoogleFonts.poppins(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text(context.l10n.galleryTitle),
         iconTheme: IconThemeData(color: colors.onBackground),
         actions: const [
           ThemeToggleButton(),
@@ -114,37 +113,20 @@ class GalleryScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: user == null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.lock_outline,
-                          size: 48, color: colors.onSurfaceVariant),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Please login to view your gallery.',
-                        style: GoogleFonts.poppins(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton(
-                        onPressed: ButtonFeedbackService.wrap(
-                          context,
-                          () {
-                            Navigator.of(context).pushNamedAndRemoveUntil(
-                              Routes.login,
-                              (route) => false,
-                            );
-                          },
-                        ),
-                        child: const Text('Go to Login'),
-                      ),
-                    ],
+            ? EmptyStateWidget(
+                icon: Icons.lock_outline,
+                title: context.l10n.authLoginRequiredToViewGallery,
+                message: context.l10n.authGoToLogin,
+                action: AppButton.secondary(
+                  label: context.l10n.authGoToLogin,
+                  onPressed: ButtonFeedbackService.wrap(
+                    context,
+                    () {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        Routes.login,
+                        (route) => false,
+                      );
+                    },
                   ),
                 ),
               )
@@ -170,23 +152,23 @@ class GalleryScreen extends StatelessWidget {
                       if (snapshot.hasError) {
                         return Center(
                           child: Text(
-                            'Unable to load gallery.',
-                            style: GoogleFonts.poppins(
-                              color: colors.onSurfaceVariant,
-                            ),
+                            context.l10n.galleryLoadFailed,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                ),
                           ),
                         );
                       }
 
                       final items = snapshot.data ?? [];
                       if (items.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'No images yet.',
-                            style: GoogleFonts.poppins(
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
+                        return EmptyStateWidget(
+                          icon: Icons.image_not_supported,
+                          title: context.l10n.galleryEmpty,
+                          message: context.l10n.galleryLoadFailed,
                         );
                       }
 
@@ -197,12 +179,12 @@ class GalleryScreen extends StatelessWidget {
                           );
                         },
                         child: GridView.builder(
-                          padding: const EdgeInsets.all(20),
+                          padding: AppSpacing.all(AppSpacing.xl),
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
+                            crossAxisSpacing: AppSpacing.lg,
+                            mainAxisSpacing: AppSpacing.lg,
                           ),
                           itemCount: items.length,
                           itemBuilder: (context, index) {
@@ -220,26 +202,27 @@ class GalleryScreen extends StatelessWidget {
                                 fit: StackFit.expand,
                                 children: [
                                   ClipRRect(
-                                    borderRadius: BorderRadius.circular(18),
+                                    borderRadius: AppRadius.circular(AppRadius.lg),
                                     child: Image.network(
                                       item.url,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                   Positioned(
-                                    top: 8,
-                                    right: 8,
+                                    top: AppSpacing.sm,
+                                    right: AppSpacing.sm,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.black54,
-                                        borderRadius: BorderRadius.circular(12),
+                                        color: colors.scrim.withOpacity(0.6),
+                                        borderRadius:
+                                            AppRadius.circular(AppRadius.sm),
                                       ),
                                       child: IconButton(
                                         icon: const Icon(
                                           Icons.delete_outline,
-                                          color: Colors.white,
                                           size: 18,
                                         ),
+                                        color: colors.onSurface,
                                         onPressed: ButtonFeedbackService.wrap(
                                           context,
                                           () => _confirmDelete(context, item),

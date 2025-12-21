@@ -4,6 +4,9 @@ import 'package:askcam/features/presentation/screens/home.pages.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -58,8 +61,11 @@ class _AuthLoadingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: const Center(
-        child: CircularProgressIndicator(),
+      body: Center(
+        child: Padding(
+          padding: AppSpacing.all(AppSpacing.xl),
+          child: const CircularProgressIndicator(),
+        ),
       ),
     );
   }
@@ -76,10 +82,15 @@ class _AuthErrorScreen extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Authentication error: $message',
-            textAlign: TextAlign.center,
+          padding: AppSpacing.all(AppSpacing.xl),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: AppCard(
+              child: Text(
+                context.l10n.authErrorMessage(message),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
         ),
       ),

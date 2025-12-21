@@ -8,7 +8,12 @@ import 'package:askcam/routes/app_routes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/app_text_field.dart';
+import 'package:askcam/core/ui/empty_state_widget.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -53,22 +58,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete saved word?'),
-          content: Text('Remove "${word.text}" from your saved words?'),
+          title: Text(context.l10n.savedWordsDeleteTitle),
+          content: Text(context.l10n.savedWordsDeleteMessage(word.text)),
           actions: [
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.pop(dialogContext, false),
               ),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.actionCancel),
             ),
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.pop(dialogContext, true),
               ),
-              child: const Text('Delete'),
+              child: Text(context.l10n.actionDelete),
             ),
           ],
         );
@@ -79,23 +84,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       await SavedWordsService.instance.deleteWord(word.id);
       if (!mounted) return;
-      _showSnackBar('Deleted.');
+      _showSnackBar(context.l10n.actionDeleted);
     } catch (e, stackTrace) {
       debugPrint('Delete saved word failed: $e');
       debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
-      _showSnackBar('Failed to delete. Please try again.');
+      _showSnackBar(context.l10n.actionDeleteFailed);
     }
   }
 
   void _copyWord(SavedWord word) {
     Clipboard.setData(ClipboardData(text: word.text));
-    _showSnackBar('Copied to clipboard.');
+    _showSnackBar(context.l10n.actionCopied);
   }
 
   void _copyHistory(HistoryItem item) {
     Clipboard.setData(ClipboardData(text: item.extractedText));
-    _showSnackBar('Copied to clipboard.');
+    _showSnackBar(context.l10n.actionCopied);
   }
 
   Future<void> _confirmDeleteHistory(HistoryItem item) async {
@@ -103,22 +108,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete history item?'),
-          content: const Text('Remove this extraction from history?'),
+          title: Text(context.l10n.historyDeleteTitle),
+          content: Text(context.l10n.historyDeleteMessage),
           actions: [
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.pop(dialogContext, false),
               ),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.actionCancel),
             ),
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.pop(dialogContext, true),
               ),
-              child: const Text('Delete'),
+              child: Text(context.l10n.actionDelete),
             ),
           ],
         );
@@ -128,17 +133,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       await HistoryService.instance.deleteHistoryItem(item.id);
       if (!mounted) return;
-      _showSnackBar('Deleted.');
+      _showSnackBar(context.l10n.actionDeleted);
     } catch (e, stackTrace) {
       debugPrint('Delete history failed: $e');
       debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
-      _showSnackBar('Failed to delete. Please try again.');
+      _showSnackBar(context.l10n.actionDeleteFailed);
     }
   }
 
   String _formatDate(DateTime? value) {
-    if (value == null) return 'Just now';
+    if (value == null) return context.l10n.timeJustNow;
     final local = value.toLocal();
     final two = (int v) => v.toString().padLeft(2, '0');
     return '${local.year}-${two(local.month)}-${two(local.day)} '
@@ -157,13 +162,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text(
-            'History',
-            style: GoogleFonts.poppins(
-              color: colors.onBackground,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          title: Text(context.l10n.historyTitle),
           iconTheme: IconThemeData(color: colors.onBackground),
           actions: const [
             ThemeToggleButton(),
@@ -172,45 +171,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
             labelColor: colors.primary,
             unselectedLabelColor: colors.onSurfaceVariant,
             indicatorColor: colors.primary,
-            tabs: const [
-              Tab(text: 'History'),
-              Tab(text: 'Saved Words'),
+            tabs: [
+              Tab(text: context.l10n.historyTab),
+              Tab(text: context.l10n.savedWordsTab),
             ],
           ),
         ),
         body: SafeArea(
           child: user == null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.lock_outline,
-                            size: 48, color: colors.onSurfaceVariant),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Please login to view history.',
-                          style: GoogleFonts.poppins(
-                            color: colors.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        OutlinedButton(
-                          onPressed: ButtonFeedbackService.wrap(
-                            context,
-                            () {
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                Routes.login,
-                                (route) => false,
-                              );
-                            },
-                          ),
-                          child: const Text('Go to Login'),
-                        ),
-                      ],
+              ? EmptyStateWidget(
+                  icon: Icons.lock_outline,
+                  title: context.l10n.authLoginRequiredToViewHistory,
+                  message: context.l10n.authGoToLogin,
+                  action: AppButton.secondary(
+                    label: context.l10n.authGoToLogin,
+                    onPressed: ButtonFeedbackService.wrap(
+                      context,
+                      () {
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          Routes.login,
+                          (route) => false,
+                        );
+                      },
                     ),
                   ),
                 )
@@ -227,7 +209,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildHistoryTab(ColorScheme colors) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      padding: AppSpacing.only(
+        left: AppSpacing.xl,
+        right: AppSpacing.xl,
+        top: AppSpacing.md,
+        bottom: AppSpacing.xl,
+      ),
       child: StreamBuilder<List<HistoryItem>>(
         stream: HistoryService.instance.watchHistory(),
         builder: (context, snapshot) {
@@ -239,33 +226,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (snapshot.hasError) {
             return Center(
               child: Text(
-                'Unable to load history.',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurfaceVariant,
-                ),
+                context.l10n.historyLoadFailed,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
               ),
             );
           }
 
           final items = snapshot.data ?? [];
           if (items.isEmpty) {
-            return Center(
-              child: Text(
-                'No history yet.',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
+            return EmptyStateWidget(
+              icon: Icons.history_rounded,
+              title: context.l10n.historyEmpty,
+              message: context.l10n.historyNoExtractedText,
             );
           }
 
           return ListView.separated(
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => SizedBox(height: AppSpacing.md),
             itemBuilder: (context, index) {
               final item = items[index];
               final preview = item.extractedText.trim().isEmpty
-                  ? 'No extracted text'
+                  ? context.l10n.historyNoExtractedText
                   : item.extractedText.trim();
               final shortPreview =
                   preview.length > 160 ? '${preview.substring(0, 160)}...' : preview;
@@ -274,36 +258,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   context,
                   () => _copyHistory(item),
                 ),
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: colors.outlineVariant),
-                  ),
+                child: AppCard(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Icon(Icons.document_scanner_rounded,
+                          color: colors.primary),
+                      SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               shortPreview,
-                              style: GoogleFonts.poppins(
-                                color: colors.onSurface,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: AppSpacing.sm),
                             Text(
                               _formatDate(item.createdAt),
-                              style: GoogleFonts.poppins(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: colors.onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
@@ -328,24 +311,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildSavedWordsTab(ColorScheme colors) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      padding: AppSpacing.only(
+        left: AppSpacing.xl,
+        right: AppSpacing.xl,
+        top: AppSpacing.md,
+        bottom: AppSpacing.xl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
+          AppTextField(
             controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search saved words',
-              prefixIcon: const Icon(Icons.search_rounded),
-              filled: true,
-              fillColor: colors.surfaceVariant.withOpacity(0.5),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-            ),
+            hintText: context.l10n.savedWordsSearchHint,
+            prefixIcon: const Icon(Icons.search_rounded),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppSpacing.lg),
           Expanded(
             child: StreamBuilder<List<SavedWord>>(
               stream: SavedWordsService.instance.watchSavedWords(),
@@ -360,10 +340,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      'Unable to load saved words.',
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurfaceVariant,
-                      ),
+                      context.l10n.savedWordsLoadFailed,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
                     ),
                   );
                 }
@@ -381,19 +361,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         .toList();
 
                 if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No saved words yet.',
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
+                  return EmptyStateWidget(
+                    icon: Icons.bookmark_border,
+                    title: context.l10n.savedWordsEmpty,
+                    message: context.l10n.savedWordsSearchHint,
                   );
                 }
 
                 return ListView.separated(
                   itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, __) => SizedBox(height: AppSpacing.md),
                   itemBuilder: (context, index) {
                     final item = filtered[index];
                     return InkWell(
@@ -401,36 +378,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         context,
                         () => _copyWord(item),
                       ),
-                      borderRadius: BorderRadius.circular(18),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: colors.outlineVariant,
-                          ),
-                        ),
+                      child: AppCard(
                         child: Row(
                           children: [
+                            Icon(Icons.bookmark_border, color: colors.primary),
+                            SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     item.text,
-                                    style: GoogleFonts.poppins(
-                                      color: colors.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
-                                  const SizedBox(height: 6),
+                                  SizedBox(height: AppSpacing.xs),
                                   Text(
                                     _formatDate(item.createdAt),
-                                    style: GoogleFonts.poppins(
-                                      color: colors.onSurfaceVariant,
-                                      fontSize: 12,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: colors.onSurfaceVariant,
+                                        ),
                                   ),
                                 ],
                               ),

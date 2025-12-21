@@ -1,83 +1,33 @@
 import 'package:askcam/core/theme/theme_controller.dart';
 import 'package:askcam/core/utils/image_cache_manager.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
+import 'package:askcam/core/services/reminder_notification_service.dart';
 import 'package:askcam/features/presentation/auth/auth_controller.dart';
 import 'package:askcam/features/presentation/settings/settings_controller.dart';
+import 'package:askcam/features/presentation/screens/about_page.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:askcam/routes/app_routes.dart';
+import 'package:askcam/core/utils/locale_controller.dart';
+import 'package:askcam/core/utils/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/section_header.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
-
-  static const Map<String, Map<String, String>> _labels = {
-    'en': {
-      'title': 'Settings',
-      'preferences': 'Preferences',
-      'theme': 'Theme',
-      'darkMode': 'Dark mode',
-      'language': 'Language',
-      'feedback': 'Sound & Haptics',
-      'silentMode': 'Silent mode',
-      'silentHint': 'Silent mode disables sound and vibration.',
-      'soundEnabled': 'Button sounds',
-      'vibrationEnabled': 'Vibration',
-      'ocrSettings': 'OCR & ML',
-      'autoEnhance': 'Auto-enhance images before OCR',
-      'autoDetectLanguage': 'Auto-detect language',
-      'autoDetectHint': 'When disabled, the app assumes the selected language.',
-      'privacy': 'Privacy & Cache',
-      'clearCache': 'Clear cache',
-      'clearCacheWeb': 'Cache cleanup skipped on web.',
-      'clearCacheDone': 'Cache cleared successfully.',
-      'clearCacheFail': 'Unable to clear cache. Please try again.',
-      'account': 'Account',
-      'loggedInAs': 'Signed in as',
-      'logout': 'Logout',
-      'logoutTitle': 'Log out',
-      'logoutMessage': 'Are you sure you want to log out?',
-      'cancel': 'Cancel',
-    },
-    'fr': {
-      'title': 'Parametres',
-      'preferences': 'Preferences',
-      'theme': 'Theme',
-      'darkMode': 'Mode sombre',
-      'language': 'Langue',
-      'feedback': 'Son & vibration',
-      'silentMode': 'Mode silencieux',
-      'silentHint': 'Le mode silencieux desactive le son et la vibration.',
-      'soundEnabled': 'Sons des boutons',
-      'vibrationEnabled': 'Vibration',
-      'ocrSettings': 'OCR & ML',
-      'autoEnhance': 'Ameliorer les images avant OCR',
-      'autoDetectLanguage': 'Detecter la langue automatiquement',
-      'autoDetectHint': 'Si desactive, la langue choisie est utilisee.',
-      'privacy': 'Confidentialite & Cache',
-      'clearCache': 'Vider le cache',
-      'clearCacheWeb': 'Nettoyage du cache ignore sur le web.',
-      'clearCacheDone': 'Cache vide avec succes.',
-      'clearCacheFail': 'Impossible de vider le cache.',
-      'account': 'Compte',
-      'loggedInAs': 'Connecte en tant que',
-      'logout': 'Se deconnecter',
-      'logoutTitle': 'Deconnexion',
-      'logoutMessage': 'Voulez-vous vous deconnecter ?',
-      'cancel': 'Annuler',
-    },
-  };
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final settings = context.watch<SettingsController>();
     final themeController = context.watch<ThemeController>();
-    final languageCode = settings.languageCode;
-    final labels = _labels[languageCode] ?? _labels['en']!;
+    final localeController = context.watch<LocaleController>();
+    final l10n = context.l10n;
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -85,13 +35,7 @@ class SettingsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          labels['title']!,
-          style: GoogleFonts.poppins(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text(l10n.settingsTitle),
         iconTheme: IconThemeData(color: colors.onBackground),
         actions: const [
           ThemeToggleButton(),
@@ -99,10 +43,11 @@ class SettingsPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: AppSpacing.all(AppSpacing.xl),
           children: [
-            _SectionHeader(title: labels['preferences']!),
-            _SettingsCard(
+            SectionHeader(title: l10n.settingsSectionPreferences),
+            AppCard(
+              padding: AppSpacing.only(),
               child: Column(
                 children: [
                   SwitchListTile(
@@ -111,148 +56,200 @@ class SettingsPage extends StatelessWidget {
                       value ? ThemeMode.dark : ThemeMode.light,
                     ),
                     title: Text(
-                      labels['darkMode']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsDarkMode,
                     ),
                     subtitle: Text(
-                      labels['theme']!,
-                      style: GoogleFonts.poppins(fontSize: 12),
+                      l10n.settingsTheme,
                     ),
                   ),
-                  const Divider(height: 1),
+                  Divider(height: AppSpacing.sm),
                   ListTile(
                     title: Text(
-                      labels['language']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.language,
                     ),
                     trailing: _LanguageDropdown(
-                      value: languageCode,
-                      onChanged: (value) {
-                        if (value != null) {
-                          settings.setLanguageCode(value);
-                        }
+                      value: localeController.locale?.languageCode ??
+                          settings.languageCode,
+                      onChanged: (value) async {
+                        if (value == null) return;
+                        await localeController.changeLocale(Locale(value));
+                        await settings.setLanguageCode(value);
                       },
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            _SectionHeader(title: labels['feedback']!),
-            _SettingsCard(
+            SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.settingsSectionFeedback),
+            AppCard(
+              padding: AppSpacing.only(),
               child: Column(
                 children: [
                   SwitchListTile(
                     value: settings.silentMode,
                     onChanged: settings.setSilentMode,
                     title: Text(
-                      labels['silentMode']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsSilentMode,
                     ),
                     subtitle: Text(
-                      labels['silentHint']!,
-                      style: GoogleFonts.poppins(fontSize: 12),
+                      l10n.settingsSilentModeHint,
                     ),
                   ),
-                  const Divider(height: 1),
+                  Divider(height: AppSpacing.sm),
                   SwitchListTile(
                     value: settings.soundEnabled,
                     onChanged: settings.silentMode
                         ? null
                         : settings.setSoundEnabled,
                     title: Text(
-                      labels['soundEnabled']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsSoundEnabled,
                     ),
                   ),
-                  const Divider(height: 1),
+                  Divider(height: AppSpacing.sm),
                   SwitchListTile(
                     value: settings.vibrationEnabled,
                     onChanged: settings.silentMode
                         ? null
                         : settings.setVibrationEnabled,
                     title: Text(
-                      labels['vibrationEnabled']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsVibrationEnabled,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            _SectionHeader(title: labels['ocrSettings']!),
-            _SettingsCard(
+            SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.settingsSectionReminders),
+            AppCard(
+              padding: AppSpacing.only(),
+              child: SwitchListTile(
+                value: settings.reminderEnabled,
+                onChanged: (value) async {
+                  if (value) {
+                    final granted = await ReminderNotificationService
+                        .instance
+                        .scheduleReminder(
+                          title: l10n.reminderTitle,
+                          body: l10n.reminderBody,
+                          channelName: l10n.reminderChannelName,
+                          channelDescription: l10n.reminderChannelDescription,
+                        );
+                    if (!granted) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l10n.reminderPermissionDenied),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+                    await settings.setReminderEnabled(true);
+                    return;
+                  }
+
+                  await ReminderNotificationService.instance.cancelAll();
+                  await settings.setReminderEnabled(false);
+                },
+                title: Text(
+                  l10n.settingsReminderToggle,
+                ),
+                subtitle: Text(
+                  l10n.settingsReminderHint,
+                ),
+              ),
+            ),
+            SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.settingsSectionAbout),
+            AppCard(
+              padding: AppSpacing.only(),
+              child: ListTile(
+                title: Text(
+                  l10n.aboutApplication,
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: ButtonFeedbackService.wrap(
+                  context,
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AboutPage(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.settingsSectionOcr),
+            AppCard(
+              padding: AppSpacing.only(),
               child: Column(
                 children: [
                   SwitchListTile(
                     value: settings.autoEnhanceImages,
                     onChanged: settings.setAutoEnhanceImages,
                     title: Text(
-                      labels['autoEnhance']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsAutoEnhanceImages,
                     ),
                   ),
-                  const Divider(height: 1),
+                  Divider(height: AppSpacing.sm),
                   SwitchListTile(
                     value: settings.autoDetectLanguage,
                     onChanged: settings.setAutoDetectLanguage,
                     title: Text(
-                      labels['autoDetectLanguage']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsAutoDetectLanguage,
                     ),
                     subtitle: Text(
-                      labels['autoDetectHint']!,
-                      style: GoogleFonts.poppins(fontSize: 12),
+                      l10n.settingsAutoDetectLanguageHint,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            _SectionHeader(title: labels['privacy']!),
-            _SettingsCard(
+            SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.settingsSectionPrivacy),
+            AppCard(
+              padding: AppSpacing.only(),
               child: ListTile(
                 title: Text(
-                  labels['clearCache']!,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  l10n.settingsClearCache,
                 ),
-                trailing: OutlinedButton(
+                trailing: AppButton.secondary(
+                  label: l10n.settingsClearCache,
+                  expanded: false,
                   onPressed: ButtonFeedbackService.wrap(
                     context,
-                    () => _clearCache(context, labels),
+                    () => _clearCache(context),
                   ),
-                  child: Text(labels['clearCache']!),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            _SectionHeader(title: labels['account']!),
-            _SettingsCard(
+            SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.settingsSectionAccount),
+            AppCard(
+              padding: AppSpacing.only(),
               child: Column(
                 children: [
                   ListTile(
                     title: Text(
-                      labels['loggedInAs']!,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      l10n.settingsLoggedInAs,
                     ),
                     subtitle: Text(
-                      user?.email ?? '-',
-                      style: GoogleFonts.poppins(fontSize: 12),
+                      user?.email ?? l10n.placeholderDash,
                     ),
                   ),
-                  const Divider(height: 1),
+                  Divider(height: AppSpacing.sm),
                   ListTile(
                     title: Text(
-                      labels['logout']!,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
+                      l10n.authLogout,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: colors.error,
                       ),
                     ),
                     trailing: Icon(Icons.logout, color: colors.error),
                     onTap: ButtonFeedbackService.wrap(
                       context,
-                      () => _confirmLogout(context, labels),
+                      () => _confirmLogout(context),
                     ),
                   ),
                 ],
@@ -264,53 +261,49 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _clearCache(
-    BuildContext context,
-    Map<String, String> labels,
-  ) async {
+  Future<void> _clearCache(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       if (kIsWeb) {
         messenger.showSnackBar(
-          SnackBar(content: Text(labels['clearCacheWeb']!)),
+          SnackBar(content: Text(l10n.settingsClearCacheWeb)),
         );
         return;
       }
       await ImageCacheManager().clearAllCache();
       messenger.showSnackBar(
-        SnackBar(content: Text(labels['clearCacheDone']!)),
+        SnackBar(content: Text(l10n.settingsClearCacheDone)),
       );
     } catch (_) {
       messenger.showSnackBar(
-        SnackBar(content: Text(labels['clearCacheFail']!)),
+        SnackBar(content: Text(l10n.settingsClearCacheFail)),
       );
     }
   }
 
-  Future<void> _confirmLogout(
-    BuildContext context,
-    Map<String, String> labels,
-  ) async {
+  Future<void> _confirmLogout(BuildContext context) async {
+    final l10n = context.l10n;
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(labels['logoutTitle']!),
-          content: Text(labels['logoutMessage']!),
+          title: Text(l10n.authLogout),
+          content: Text(l10n.authLogoutConfirmation),
           actions: [
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.of(dialogContext).pop(false),
               ),
-              child: Text(labels['cancel']!),
+              child: Text(l10n.actionCancel),
             ),
             TextButton(
               onPressed: ButtonFeedbackService.wrap(
                 dialogContext,
                 () => Navigator.of(dialogContext).pop(true),
               ),
-              child: Text(labels['logout']!),
+              child: Text(l10n.authLogout),
             ),
           ],
         );
@@ -320,7 +313,7 @@ class SettingsPage extends StatelessWidget {
     if (shouldLogout != true) return;
 
     final controller = context.read<AuthController>();
-    final success = await controller.signOut();
+    final success = await controller.signOut(l10n: l10n);
     if (!context.mounted) return;
 
     if (success) {
@@ -329,55 +322,11 @@ class SettingsPage extends StatelessWidget {
         (route) => false,
       );
     } else {
-      final message = controller.errorMessage ?? 'Logout failed.';
+      final message = controller.errorMessage ?? l10n.authLogoutFailed;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
     }
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        title,
-        style: GoogleFonts.poppins(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: colors.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  final Widget child;
-
-  const _SettingsCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 8,
-      shadowColor: colors.shadow.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: child,
-      ),
-    );
   }
 }
 
@@ -398,17 +347,28 @@ class _LanguageDropdown extends StatelessWidget {
       underline: const SizedBox.shrink(),
       iconEnabledColor: colors.primary,
       onChanged: onChanged,
-      items: SettingsController.supportedLanguages.entries
+      items: SettingsController.supportedLanguageCodes
           .map(
-            (entry) => DropdownMenuItem<String>(
-              value: entry.key,
+            (code) => DropdownMenuItem<String>(
+              value: code,
               child: Text(
-                entry.value,
-                style: GoogleFonts.poppins(fontSize: 13),
+                _languageLabel(context, code),
               ),
             ),
           )
           .toList(),
     );
+  }
+
+  String _languageLabel(BuildContext context, String code) {
+    final l10n = context.l10n;
+    switch (code) {
+      case 'fr':
+        return l10n.languageFrench;
+      case 'ar':
+        return l10n.languageArabic;
+      default:
+        return l10n.languageEnglish;
+    }
   }
 }

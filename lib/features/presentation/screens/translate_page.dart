@@ -5,8 +5,13 @@ import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/app_text_field.dart';
+import 'package:askcam/core/ui/section_header.dart';
 
 class TranslatePage extends StatefulWidget {
   final TranslatePageArgs args;
@@ -88,17 +93,17 @@ class _TranslatePageState extends State<TranslatePage> {
       setState(() {
         _translatedText = text;
         _errorMessage =
-            'Translation unavailable right now. Showing the original text.';
+            context.l10n.translationUnavailableOriginal;
         _isTranslating = false;
       });
-      _showSnackBar('Unable to translate. Please try again.');
+      _showSnackBar(context.l10n.translationFailedTryAgain);
     }
   }
 
   void _copyTranslation() {
     if (_translatedText.trim().isEmpty) return;
     Clipboard.setData(ClipboardData(text: _translatedText));
-    _showSnackBar('Translated text copied to clipboard.');
+    _showSnackBar(context.l10n.translationCopied);
   }
 
   void _showSnackBar(String message) {
@@ -107,28 +112,34 @@ class _TranslatePageState extends State<TranslatePage> {
     );
   }
 
+  String _languageLabel(BuildContext context, String code) {
+    final l10n = context.l10n;
+    switch (code) {
+      case 'fr':
+        return l10n.languageFrench;
+      case 'ar':
+        return l10n.languageArabic;
+      default:
+        return l10n.languageEnglish;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final settings = context.watch<SettingsController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Translate',
-          style: GoogleFonts.poppins(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text(l10n.translateTitle),
         iconTheme: IconThemeData(color: colors.onBackground),
         actions: [
           IconButton(
-            tooltip: 'Copy',
+            tooltip: l10n.actionCopy,
             onPressed: ButtonFeedbackService.wrap(
               context,
               _translatedText.trim().isEmpty ? null : _copyTranslation,
@@ -140,138 +151,77 @@ class _TranslatePageState extends State<TranslatePage> {
               context,
               () => Navigator.pop(context),
             ),
-            child: const Text('Back'),
+            child: Text(l10n.actionBack),
           ),
           const ThemeToggleButton(),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: AppSpacing.all(AppSpacing.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Language',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
+              SectionHeader(title: l10n.language),
+              AppCard(
+                padding: AppSpacing.only(
+                  left: AppSpacing.lg,
+                  right: AppSpacing.lg,
+                  top: AppSpacing.sm,
+                  bottom: AppSpacing.sm,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: isDark ? const Color(0xFF1F1F3B) : colors.surface,
-                  border: Border.all(color: colors.outlineVariant),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: settings.languageCode,
-                    dropdownColor:
-                        isDark ? const Color(0xFF1F1F3B) : colors.surface,
+                    dropdownColor: colors.surface,
                     iconEnabledColor: colors.primary,
                     onChanged: (value) {
                       if (value != null) {
                         settings.setLanguageCode(value);
                       }
                     },
-                    items: SettingsController.supportedLanguages.entries
+                    items: SettingsController.supportedLanguageCodes
                         .map(
-                          (entry) => DropdownMenuItem<String>(
-                            value: entry.key,
-                            child: Text(
-                              entry.value,
-                              style: GoogleFonts.poppins(
-                                color: colors.onSurface,
-                                fontSize: 14,
-                              ),
-                            ),
+                          (code) => DropdownMenuItem<String>(
+                            value: code,
+                            child: Text(_languageLabel(context, code)),
                           ),
                         )
                         .toList(),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Text to translate',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
+              SizedBox(height: AppSpacing.xl),
+              SectionHeader(title: l10n.translateInputTitle),
+              AppTextField(
                 controller: _textController,
                 minLines: 5,
                 maxLines: null,
-                style: GoogleFonts.poppins(
-                  color: colors.onSurface,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Edit the text to translate...',
-                  hintStyle: GoogleFonts.poppins(
-                    color: colors.onSurfaceVariant,
-                    fontSize: 13,
-                  ),
-                  filled: true,
-                  fillColor: colors.surfaceVariant.withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+                hintText: l10n.translateInputHint,
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: ButtonFeedbackService.wrap(
-                    context,
-                    _isTranslating ? null : _translate,
-                  ),
-                  icon: _isTranslating
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colors.onPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.translate_rounded),
-                  label: Text(
-                    _isTranslating ? 'Translating...' : 'Translate',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
+              SizedBox(height: AppSpacing.md),
+              AppButton.primary(
+                label: _isTranslating
+                    ? l10n.translationInProgressShort
+                    : l10n.translateAction,
+                onPressed: ButtonFeedbackService.wrap(
+                  context,
+                  _isTranslating ? null : _translate,
                 ),
+                icon: _isTranslating
+                    ? SizedBox(
+                        width: AppSpacing.lg,
+                        height: AppSpacing.lg,
+                        child: CircularProgressIndicator(
+                          strokeWidth: AppSpacing.xs,
+                          color: colors.onPrimary,
+                        ),
+                      )
+                    : const Icon(Icons.translate_rounded),
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Translated output',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: colors.surface,
-                  border: Border.all(color: colors.outlineVariant),
-                ),
+              SizedBox(height: AppSpacing.xl),
+              SectionHeader(title: l10n.translateOutputTitle),
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -279,14 +229,13 @@ class _TranslatePageState extends State<TranslatePage> {
                       children: [
                         Text(
                           settings.languageCode.toUpperCase(),
-                          style: GoogleFonts.poppins(
-                            color: colors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: colors.primary,
+                              ),
                         ),
                         const Spacer(),
                         IconButton(
-                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          icon: const Icon(Icons.copy_rounded),
                           onPressed: ButtonFeedbackService.wrap(
                             context,
                             _translatedText.trim().isEmpty
@@ -296,46 +245,33 @@ class _TranslatePageState extends State<TranslatePage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppSpacing.sm),
                     SelectableText(
                       _translatedText.isEmpty
-                          ? 'Translation will appear here.'
+                          ? l10n.translationOutputPlaceholder
                           : _translatedText,
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurface,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     if (_errorMessage != null) ...[
-                      const SizedBox(height: 10),
+                      SizedBox(height: AppSpacing.sm),
                       Text(
                         _errorMessage!,
-                        style: GoogleFonts.poppins(
-                          color: colors.tertiary,
-                          fontSize: 12,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colors.tertiary,
+                            ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 48,
-                child: OutlinedButton.icon(
-                  onPressed: ButtonFeedbackService.wrap(
-                    context,
-                    () => Navigator.pop(context),
-                  ),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  label: const Text('Back to Extract'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
+              SizedBox(height: AppSpacing.xl),
+              AppButton.secondary(
+                label: l10n.actionBackToExtract,
+                onPressed: ButtonFeedbackService.wrap(
+                  context,
+                  () => Navigator.pop(context),
                 ),
+                icon: const Icon(Icons.arrow_back_rounded),
               ),
             ],
           ),

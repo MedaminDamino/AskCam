@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:flutter/material.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_radius.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
 
 class GoogleSignInButton extends StatelessWidget {
   final bool isLoading;
@@ -16,9 +19,10 @@ class GoogleSignInButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: AppSpacing.xxl + AppSpacing.lg,
       child: OutlinedButton(
         onPressed: ButtonFeedbackService.wrap(
           context,
@@ -29,7 +33,7 @@ class GoogleSignInButton extends StatelessWidget {
           foregroundColor: colors.onSurface,
           side: BorderSide(color: colors.outlineVariant),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: AppRadius.circular(AppRadius.md),
           ),
         ),
         child: isLoading
@@ -41,14 +45,22 @@ class GoogleSignInButton extends StatelessWidget {
                   color: colors.primary,
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  GoogleLogo(size: 20),
-                  SizedBox(width: 12),
+                  GoogleLogo(
+                    size: 20,
+                    colors: [
+                      colors.primary,
+                      colors.secondary,
+                      colors.tertiary,
+                      colors.primaryContainer,
+                    ],
+                  ),
+                  SizedBox(width: AppSpacing.md),
                   Text(
-                    'Continue with Google',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    context.l10n.googleSignInButton,
+                    style: textTheme.labelLarge,
                   ),
                 ],
               ),
@@ -59,19 +71,28 @@ class GoogleSignInButton extends StatelessWidget {
 
 class GoogleLogo extends StatelessWidget {
   final double size;
+  final List<Color> colors;
 
-  const GoogleLogo({super.key, this.size = 18});
+  const GoogleLogo({
+    super.key,
+    this.size = 18,
+    required this.colors,
+  });
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: Size.square(size),
-      painter: _GoogleLogoPainter(),
+      painter: _GoogleLogoPainter(colors),
     );
   }
 }
 
 class _GoogleLogoPainter extends CustomPainter {
+  final List<Color> colors;
+
+  _GoogleLogoPainter(this.colors);
+
   @override
   void paint(Canvas canvas, Size size) {
     final stroke = size.width * 0.18;
@@ -83,19 +104,19 @@ class _GoogleLogoPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
-    paint.color = const Color(0xFF4285F4);
+    paint.color = colors[0];
     canvas.drawArc(rect, -math.pi / 4, math.pi / 2, false, paint);
 
-    paint.color = const Color(0xFFDB4437);
+    paint.color = colors[1];
     canvas.drawArc(rect, math.pi / 4, math.pi / 2, false, paint);
 
-    paint.color = const Color(0xFFF4B400);
+    paint.color = colors[2];
     canvas.drawArc(rect, 3 * math.pi / 4, math.pi / 2, false, paint);
 
-    paint.color = const Color(0xFF0F9D58);
+    paint.color = colors[3];
     canvas.drawArc(rect, 5 * math.pi / 4, math.pi / 2, false, paint);
 
-    final barPaint = Paint()..color = const Color(0xFF4285F4);
+    final barPaint = Paint()..color = colors[0];
     final barHeight = stroke * 0.9;
     final barWidth = radius;
     final barRect = Rect.fromLTWH(

@@ -14,9 +14,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_card.dart';
+import 'package:askcam/core/ui/app_radius.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
+import 'package:askcam/core/ui/app_text_field.dart';
+import 'package:askcam/core/ui/section_header.dart';
 
 class ExtractResultPage extends StatefulWidget {
   final ExtractResultArgs args;
@@ -82,11 +88,10 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       debugPrint('$stackTrace');
       if (!mounted) return;
       setState(() {
-        _errorMessage =
-            'We could not read this photo. Please retake it in better lighting.';
+        _errorMessage = context.l10n.ocrErrorUnableToRead;
         _isOcrLoading = false;
       });
-      _showSnackBar('Unable to extract text. Please try another photo.');
+      _showSnackBar(context.l10n.ocrUnableToExtract);
     }
   }
 
@@ -95,7 +100,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
     if (!await _ensureOnline()) return;
 
     if (FirebaseAuth.instance.currentUser == null) {
-      _showSnackBar('Please login to save images.');
+      _showSnackBar(context.l10n.authLoginRequiredToSaveImages);
       return;
     }
 
@@ -136,13 +141,12 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
             AppRuntimeConfig.keyCloudName,
             AppRuntimeConfig.keyCloudPreset,
           ]);
-          _uploadError =
-              'Cloudinary is not configured. Please run the app with $args';
+          _uploadError = context.l10n.cloudinaryNotConfigured(args);
         } else if (_isOfflineError(e)) {
-          _uploadError = 'No internet connection';
+          _uploadError = context.l10n.errorNoInternetConnection;
           _isOnline = false;
         } else {
-          _uploadError = 'Upload failed. Please try again.';
+          _uploadError = context.l10n.uploadFailedTryAgain;
         }
       });
       _showSnackBar(_uploadError!);
@@ -171,7 +175,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       });
     }
     if (!online) {
-      _showSnackBar('No internet connection');
+      _showSnackBar(context.l10n.errorNoInternetConnection);
     }
     return online;
   }
@@ -224,7 +228,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
   void _goTranslate() {
     final text = _textController.text.trim();
     if (text.isEmpty) {
-      _showSnackBar('No text to translate yet.');
+      _showSnackBar(context.l10n.translationNoText);
       return;
     }
     Navigator.pushNamed(
@@ -254,7 +258,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
     );
 
     if (args.imageBytes == null && args.imagePath == null) {
-      _showSnackBar('No image available for AI.');
+      _showSnackBar(context.l10n.aiNoImageAvailable);
       return;
     }
 
@@ -286,11 +290,11 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
     if (_isOcrLoading) return;
     final extractedText = _textController.text.trim();
     if (extractedText.isEmpty) {
-      _showSnackBar('No text to save yet.');
+      _showSnackBar(context.l10n.saveWordsNoText);
       return;
     }
     if (!_isOnline) {
-      _showSnackBar('No internet connection');
+      _showSnackBar(context.l10n.errorNoInternetConnection);
       return;
     }
 
@@ -302,8 +306,10 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: colors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
       ),
       builder: (sheetContext) {
         bool isSaving = false;
@@ -319,26 +325,25 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
               final value = inputController.text.trim();
               if (value.isEmpty) {
                 setModalState(() {
-                  errorText = 'Select a word/phrase first or type one.';
+                  errorText = context.l10n.saveWordsSelectOrTypeError;
                 });
                 return;
               }
               if (value.length < 2 || value.length > 120) {
                 setModalState(() {
-                  errorText =
-                      'Word length must be between 2 and 120 characters.';
+                  errorText = context.l10n.saveWordsLengthError;
                 });
                 return;
               }
 
               if (FirebaseAuth.instance.currentUser == null) {
                 Navigator.pop(sheetContext);
-                _showSnackBar('Please login to save words.');
+                _showSnackBar(context.l10n.authLoginRequiredToSaveWords);
                 return;
               }
               if (!await _ensureOnline()) {
                 setModalState(() {
-                  errorText = 'No internet connection';
+                  errorText = context.l10n.errorNoInternetConnection;
                 });
                 return;
               }
@@ -355,9 +360,9 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                 if (exists) {
                   setModalState(() {
                     isSaving = false;
-                    errorText = 'Already saved.';
+                    errorText = context.l10n.saveWordsAlreadySaved;
                   });
-                  _showSnackBar('Already saved.');
+                  _showSnackBar(context.l10n.saveWordsAlreadySaved);
                   return;
                 }
 
@@ -374,25 +379,25 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                 });
                 Navigator.pop(sheetContext);
                 if (!mounted) return;
-                _showSnackBar('Saved.');
+                _showSnackBar(context.l10n.saveWordsSaved);
               } catch (e, stackTrace) {
                 debugPrint('Failed to save word: $e');
                 debugPrintStack(stackTrace: stackTrace);
                 if (!mounted) return;
                 setModalState(() {
                   isSaving = false;
-                  errorText = 'Failed to save, try again.';
+                  errorText = context.l10n.saveWordsFailed;
                 });
-                _showSnackBar('Failed to save, try again.');
+                _showSnackBar(context.l10n.saveWordsFailed);
               }
             }
 
             return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 16,
-                bottom: 16 + media.viewInsets.bottom,
+              padding: AppSpacing.only(
+                left: AppSpacing.xl,
+                right: AppSpacing.xl,
+                top: AppSpacing.lg,
+                bottom: AppSpacing.lg + media.viewInsets.bottom,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -400,116 +405,93 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.bookmark_add_rounded,
-                          color: colors.primary),
-                      const SizedBox(width: 8),
+                      Icon(Icons.bookmark_add_rounded, color: colors.primary),
+                      SizedBox(width: AppSpacing.sm),
                       Text(
-                        'Save words',
-                        style: GoogleFonts.poppins(
-                          color: colors.onSurface,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        context.l10n.saveWordsTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Select a word or phrase in the text above, or type one below.',
-                    style: GoogleFonts.poppins(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
+                    context.l10n.saveWordsInstruction,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppSpacing.md),
                   Container(
-                    constraints: const BoxConstraints(maxHeight: 140),
-                    padding: const EdgeInsets.all(12),
+                    constraints: BoxConstraints(
+                      maxHeight: AppSpacing.xxl +
+                          AppSpacing.xxl +
+                          AppSpacing.xxl +
+                          AppSpacing.xxl,
+                    ),
+                    padding: AppSpacing.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF1F1F3B)
-                          : colors.surfaceVariant.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(16),
+                          ? colors.surfaceVariant
+                          : colors.surfaceVariant,
+                      borderRadius: AppRadius.circular(AppRadius.md),
                       border: Border.all(color: colors.outlineVariant),
                     ),
                     child: SingleChildScrollView(
                       child: SelectableText(
                         extractedText,
-                        style: GoogleFonts.poppins(
-                          color: colors.onSurface,
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
+                  SizedBox(height: AppSpacing.md),
+                  AppTextField(
                     controller: inputController,
                     maxLines: 2,
-                    style: GoogleFonts.poppins(
-                      color: colors.onSurface,
-                      fontSize: 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Type a word or phrase to save',
-                      hintStyle: GoogleFonts.poppins(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                      filled: true,
-                      fillColor: colors.surfaceVariant.withOpacity(0.5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                    hintText: context.l10n.saveWordsHint,
                   ),
                   if (errorText != null) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppSpacing.sm),
                     Text(
                       errorText!,
-                      style: GoogleFonts.poppins(
-                        color: colors.error,
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colors.error,
+                          ),
                     ),
                   ],
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.lg),
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
+                        child: AppButton.secondary(
+                          label: context.l10n.actionCancel,
                           onPressed: ButtonFeedbackService.wrap(
                             sheetContext,
                             isSaving
                                 ? null
                                 : () => Navigator.pop(sheetContext),
                           ),
-                          child: const Text('Cancel'),
+                          expanded: true,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: ElevatedButton(
+                        child: AppButton.primary(
+                          label: context.l10n.actionSave,
                           onPressed: ButtonFeedbackService.wrap(
                             sheetContext,
                             isSaving ? null : handleSave,
                           ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colors.primary,
-                            foregroundColor: colors.onPrimary,
-                          ),
-                          child: isSaving
+                          icon: isSaving
                               ? SizedBox(
-                                  width: 18,
-                                  height: 18,
+                                  width: AppSpacing.lg,
+                                  height: AppSpacing.lg,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: AppSpacing.xs,
                                     color: colors.onPrimary,
                                   ),
                                 )
-                              : const Text('Save'),
+                              : null,
+                          expanded: true,
                         ),
                       ),
                     ],
@@ -527,11 +509,11 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
     if (_isSavingHistory || _isOcrLoading) return;
     final text = _textController.text.trim();
     if (text.isEmpty) {
-      _showSnackBar('No text to save yet.');
+      _showSnackBar(context.l10n.historyNoText);
       return;
     }
     if (FirebaseAuth.instance.currentUser == null) {
-      _showSnackBar('Please login to save history.');
+      _showSnackBar(context.l10n.authLoginRequiredToSaveHistory);
       return;
     }
     if (!await _ensureOnline()) return;
@@ -548,13 +530,15 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
         imageUrl: _uploadedImageUrl,
       );
       if (!mounted) return;
-      _showSnackBar('Saved to history.');
+      _showSnackBar(context.l10n.historySaved);
     } catch (e, stackTrace) {
       debugPrint('Save history failed: $e');
       debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
       final message =
-          _isOfflineError(e) ? 'No internet connection' : 'Failed to save.';
+          _isOfflineError(e)
+              ? context.l10n.errorNoInternetConnection
+              : context.l10n.historySaveFailed;
       _showSnackBar(message);
     } finally {
       if (!mounted) return;
@@ -567,20 +551,13 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'Extract Result',
-          style: GoogleFonts.poppins(
-            color: colors.onBackground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text(context.l10n.ocrExtractResultTitle),
         iconTheme: IconThemeData(color: colors.onBackground),
         actions: const [
           ThemeToggleButton(),
@@ -588,104 +565,71 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+          padding: AppSpacing.only(
+            left: AppSpacing.xl,
+            right: AppSpacing.xl,
+            top: AppSpacing.lg,
+            bottom: AppSpacing.xxl + AppSpacing.xxl + AppSpacing.xxl,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildImagePreview(),
               if (_isUploadingImage || _uploadError != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 12),
+                  padding: AppSpacing.only(top: AppSpacing.md),
                   child: _buildUploadStatus(),
                 ),
-              const SizedBox(height: 20),
+              SizedBox(height: AppSpacing.xl),
               if (_errorMessage != null) _buildErrorBanner(),
-              Text(
-                'Original extracted text',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: isDark
-                      ? const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF1F1F3B), Color(0xFF2A2A50)],
-                        )
-                      : LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [colors.surface, colors.surfaceVariant],
-                        ),
-                  border: Border.all(color: colors.outlineVariant),
-                ),
-                padding: const EdgeInsets.all(16),
+              SectionHeader(title: context.l10n.ocrOriginalExtractedText),
+              AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_isOcrLoading)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: AppSpacing.only(bottom: AppSpacing.md),
                         child: Row(
                           children: [
                             SizedBox(
-                              width: 16,
-                              height: 16,
+                              width: AppSpacing.lg,
+                              height: AppSpacing.lg,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: AppSpacing.xs,
                                 color: colors.primary,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: AppSpacing.sm),
                             Text(
-                              'Extracting text...',
-                              style: GoogleFonts.poppins(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
+                              context.l10n.ocrExtractingText,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: colors.onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
                       ),
-                    TextField(
+                    AppTextField(
                       controller: _textController,
                       maxLines: null,
                       minLines: 8,
-                      style: GoogleFonts.poppins(
-                        color: colors.onSurface,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: _isOcrLoading
-                            ? 'OCR is running...'
-                            : 'Edit the extracted text here.',
-                        hintStyle: GoogleFonts.poppins(
-                          color: colors.onSurfaceVariant,
-                          fontSize: 13,
-                        ),
-                        filled: true,
-                        fillColor: colors.surfaceVariant.withOpacity(0.5),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                      hintText: _isOcrLoading
+                          ? context.l10n.ocrRunning
+                          : context.l10n.ocrEditHint,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: AppButton.secondary(
+                      label: context.l10n.historySaveAction,
                       onPressed: ButtonFeedbackService.wrap(
                         context,
                         (_isOcrLoading || _isSavingHistory || !_isOnline)
@@ -694,38 +638,36 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                       ),
                       icon: _isSavingHistory
                           ? SizedBox(
-                              width: 16,
-                              height: 16,
+                              width: AppSpacing.lg,
+                              height: AppSpacing.lg,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: AppSpacing.xs,
                                 color: colors.primary,
                               ),
                             )
-                          : const Icon(Icons.history_rounded, size: 18),
-                      label: const Text('Save history'),
+                          : const Icon(Icons.history_rounded),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: AppButton.secondary(
+                      label: context.l10n.saveWordsAction,
                       onPressed: ButtonFeedbackService.wrap(
                         context,
                         (_isOcrLoading || !_isOnline)
                             ? null
                             : _openSaveWordsSheet,
                       ),
-                      icon: const Icon(Icons.bookmark_add_rounded, size: 18),
-                      label: const Text('Save words'),
+                      icon: const Icon(Icons.bookmark_add_rounded),
                     ),
                   ),
                 ],
               ),
               Text(
-                'Edit the text if OCR missed anything before translating or asking AI.',
-                style: GoogleFonts.poppins(
-                  color: colors.onSurfaceVariant,
-                  fontSize: 12,
-                ),
+                context.l10n.ocrEditInstruction,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
               ),
             ],
           ),
@@ -733,68 +675,51 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: AppSpacing.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.lg,
+          ),
           decoration: BoxDecoration(
             color: colors.surface,
             boxShadow: [
               BoxShadow(
                 color: colors.shadow.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, -4),
+                blurRadius: AppSpacing.md,
+                offset: Offset(0, -AppSpacing.xs),
               ),
             ],
           ),
           child: Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: AppButton.secondary(
+                  label: context.l10n.actionHome,
                   onPressed: ButtonFeedbackService.wrap(context, _goHome),
-                  icon: const Icon(Icons.home_rounded, size: 18),
-                  label: const Text('Home'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
+                  icon: const Icon(Icons.home_rounded),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: ElevatedButton.icon(
+                child: AppButton.primary(
+                  label: context.l10n.actionTranslate,
                   onPressed: ButtonFeedbackService.wrap(
                     context,
                     _isOcrLoading ? null : _goTranslate,
                   ),
-                  icon: const Icon(Icons.translate_rounded, size: 18),
-                  label: const Text('Translate'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
+                  icon: const Icon(Icons.translate_rounded),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: ElevatedButton.icon(
+                child: AppButton.primary(
+                  label: context.l10n.actionAskAi,
                   onPressed: ButtonFeedbackService.wrap(
                     context,
                     _isOcrLoading ? null : _goAskAi,
                   ),
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text('Ask AI'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: colors.tertiary,
-                    foregroundColor: colors.onTertiary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
+                  icon: const Icon(Icons.auto_awesome_rounded),
                 ),
               ),
             ],
@@ -805,19 +730,20 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
   }
 
   Widget _buildImagePreview() {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: AppRadius.circular(AppRadius.lg),
         boxShadow: [
           BoxShadow(
-            color: Colors.cyanAccent.withOpacity(0.25),
-            blurRadius: 18,
-            spreadRadius: 1,
+            color: colors.primary.withOpacity(0.2),
+            blurRadius: AppSpacing.xl,
+            spreadRadius: AppSpacing.xs,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: AppRadius.circular(AppRadius.lg),
         child: Image.file(
           widget.args.imageFile,
           width: double.infinity,
@@ -829,28 +755,23 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
 
   Widget _buildErrorBanner() {
     final colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colors.error.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.error.withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_rounded, color: colors.error),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _errorMessage ?? '',
-              style: GoogleFonts.poppins(
-                color: colors.error,
-                fontWeight: FontWeight.w600,
+    return Padding(
+      padding: AppSpacing.only(bottom: AppSpacing.md),
+      child: AppCard(
+        child: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: colors.error),
+            SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                _errorMessage ?? '',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.error,
+                    ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -861,20 +782,19 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       return Row(
         children: [
           SizedBox(
-            width: 16,
-            height: 16,
+            width: AppSpacing.lg,
+            height: AppSpacing.lg,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
+              strokeWidth: AppSpacing.xs,
               color: colors.primary,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: AppSpacing.sm),
           Text(
-            'Uploading image to cloud...',
-            style: GoogleFonts.poppins(
-              color: colors.onSurfaceVariant,
-              fontSize: 12,
-            ),
+            context.l10n.uploadingImage,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
           ),
         ],
       );
@@ -882,15 +802,14 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
     if (_uploadError != null) {
       return Row(
         children: [
-          Icon(Icons.cloud_off, color: colors.error, size: 18),
-          const SizedBox(width: 8),
+          Icon(Icons.cloud_off, color: colors.error),
+          SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               _uploadError!,
-              style: GoogleFonts.poppins(
-                color: colors.error,
-                fontSize: 12,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.error,
+                  ),
             ),
           ),
           TextButton(
@@ -898,7 +817,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
               context,
               _uploadImageIfNeeded,
             ),
-            child: const Text('Retry'),
+            child: Text(context.l10n.actionRetry),
           ),
         ],
       );

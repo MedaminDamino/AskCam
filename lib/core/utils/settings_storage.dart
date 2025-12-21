@@ -7,6 +7,7 @@ class SettingsStorage {
   static const String _soundEnabledKey = 'settings_sound_enabled';
   static const String _vibrationEnabledKey = 'settings_vibration_enabled';
   static const String _silentModeKey = 'settings_silent_mode';
+  static const String _reminderEnabledKey = 'settings_reminder_enabled';
 
   Future<String?> readLanguageCode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -38,6 +39,11 @@ class SettingsStorage {
     return prefs.getBool(_silentModeKey);
   }
 
+  Future<bool?> readReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_reminderEnabledKey);
+  }
+
   Future<void> writeLanguageCode(String code) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_languageCodeKey, code);
@@ -66,5 +72,10 @@ class SettingsStorage {
   Future<void> writeSilentMode(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_silentModeKey, value);
+  }
+
+  Future<void> writeReminderEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_reminderEnabledKey, value);
   }
 }

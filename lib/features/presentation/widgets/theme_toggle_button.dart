@@ -2,6 +2,7 @@ import 'package:askcam/core/theme/theme_controller.dart';
 import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
 
 class ThemeToggleButton extends StatelessWidget {
   final Color? color;
@@ -19,7 +20,9 @@ class ThemeToggleButton extends StatelessWidget {
             platformBrightness == Brightness.dark);
 
     return IconButton(
-      tooltip: effectiveIsDark ? 'Light mode' : 'Dark mode',
+      tooltip: effectiveIsDark
+          ? context.l10n.tooltipLightMode
+          : context.l10n.tooltipDarkMode,
       icon: Icon(
         effectiveIsDark ? Icons.light_mode : Icons.dark_mode,
         color: color ?? colors.onSurfaceVariant,

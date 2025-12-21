@@ -6,9 +6,12 @@ import 'package:askcam/features/presentation/screens/result_flow_args.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
+import 'package:askcam/core/utils/l10n.dart';
+import 'package:askcam/core/ui/app_button.dart';
+import 'package:askcam/core/ui/app_radius.dart';
+import 'package:askcam/core/ui/app_spacing.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -17,7 +20,8 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderStateMixin {
+class _CameraScreenState extends State<CameraScreen>
+    with SingleTickerProviderStateMixin {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
@@ -73,10 +77,12 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showErrorSnackBar('Error picking image: $e');
+      _showErrorSnackBar(
+        context.l10n.cameraPickImageError(e.toString()),
+      );
     }
   }
-  // ✅ NEW: Add compression method
+
   Future<File> _compressImage(File file) async {
     try {
       final bytes = await file.readAsBytes();
@@ -84,29 +90,22 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
 
       if (image == null) return file;
 
-      // Resize if too large
       if (image.width > 1920 || image.height > 1920) {
         image = img.copyResize(image, width: 1920);
-        debugPrint('📐 Image resized to fit 1920px');
+        debugPrint('Image resized to fit 1920px');
       }
 
-      // Calculate file size before compression
-      final originalSize = bytes.length / 1024 / 1024; // MB
-
       final compressed = img.encodeJpg(image, quality: 85);
-      final compressedSize = compressed.length / 1024 / 1024; // MB
-
-      debugPrint('📦 Compressed: ${originalSize.toStringAsFixed(2)}MB → ${compressedSize.toStringAsFixed(2)}MB');
-
-      // Save compressed version
       final tempDir = Directory.systemTemp;
-      final compressedFile = File('${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final compressedFile = File(
+        '${tempDir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
       await compressedFile.writeAsBytes(compressed);
 
       return compressedFile;
     } catch (e) {
-      debugPrint('❌ Compression failed: $e');
-      return file; // Return original if compression fails
+      debugPrint('Compression failed: $e');
+      return file;
     }
   }
 
@@ -117,7 +116,9 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
         content: Text(message),
         backgroundColor: colors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.circular(AppRadius.md),
+        ),
       ),
     );
   }
@@ -129,7 +130,6 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
 
   void _scanText() {
     if (_selectedImage != null) {
-      // Use named route with arguments
       Navigator.pushNamed(
         context,
         Routes.textRecognition,
@@ -144,6 +144,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -157,115 +158,135 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
             () => Navigator.pop(context),
           ),
         ),
-        title: Text(
-          'Capture Moment',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: colors.onBackground,
-          ),
-        ),
+        title: Text(l10n.cameraTitle),
         centerTitle: true,
         actions: [
           if (_selectedImage != null)
             IconButton(
               icon: Icon(Icons.delete_outline, color: colors.error),
               onPressed: ButtonFeedbackService.wrap(context, _clearImage),
-              tooltip: 'Clear Image',
+              tooltip: l10n.cameraClearImage,
             ),
           const ThemeToggleButton(),
         ],
       ),
-      body: _isLoading
-          ? Center(
-        child: CircularProgressIndicator(
-          color: colors.primary,
-        ),
-      )
-          : _selectedImage == null
-          ? _buildEmptyState()
-          : _buildImagePreview(),
-      floatingActionButton: _selectedImage == null
-          ? _buildFloatingButtons()
-          : _buildScanButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(color: colors.primary),
+              )
+            : _selectedImage == null
+                ? const _EmptyState()
+                : _ImagePreview(
+                    image: _selectedImage!,
+                    scale: _scaleAnimation,
+                  ),
+      ),
+      bottomNavigationBar: _selectedImage == null
+          ? _CaptureActions(
+              onGallery: () => _pickImage(ImageSource.gallery),
+              onCamera: () => _pickImage(ImageSource.camera),
+            )
+          : _ScanAction(onScan: _scanText),
     );
   }
+}
 
-  Widget _buildEmptyState() {
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = context.l10n;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  Colors.cyan.withOpacity(0.2),
-                  Colors.purple.withOpacity(0.2),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      child: Padding(
+        padding: AppSpacing.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: AppSpacing.xxl + AppSpacing.xxl,
+              height: AppSpacing.xxl + AppSpacing.xxl,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    colors.primary.withOpacity(0.2),
+                    colors.secondary.withOpacity(0.2),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Icon(
+                Icons.photo_camera_outlined,
+                size: AppSpacing.xxl,
+                color: colors.onSurfaceVariant,
               ),
             ),
-            child: Icon(
-              Icons.photo_camera_outlined,
-              size: 80,
-              color: colors.onSurface.withOpacity(0.6),
+            SizedBox(height: AppSpacing.xxl),
+            Text(
+              l10n.cameraNoImageSelected,
+              style: textTheme.headlineSmall,
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'No image selected',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: colors.onSurface,
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.cameraEmptyHint,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Tap the buttons below to get started',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: colors.onSurfaceVariant,
-            ),
-          ),
-        ],
+            SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildImagePreview() {
+class _ImagePreview extends StatelessWidget {
+  final File image;
+  final Animation<double> scale;
+
+  const _ImagePreview({
+    required this.image,
+    required this.scale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final radius = AppRadius.circular(AppRadius.xl);
     return ScaleTransition(
-      scale: _scaleAnimation,
+      scale: scale,
       child: SingleChildScrollView(
+        padding: AppSpacing.all(AppSpacing.lg),
         child: Container(
-          margin: const EdgeInsets.all(20),
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.65,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: radius,
             boxShadow: [
               BoxShadow(
-                color: Colors.cyanAccent.withOpacity(0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
+                color: colors.primary.withOpacity(0.2),
+                blurRadius: AppSpacing.xl,
+                spreadRadius: AppSpacing.xs,
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: radius,
             child: Stack(
               children: [
                 Image.file(
-                  _selectedImage!,
+                  image,
                   width: double.infinity,
                   fit: BoxFit.contain,
                 ),
@@ -274,28 +295,28 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
                   left: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: AppSpacing.all(AppSpacing.lg),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.8),
+                          colors.scrim.withOpacity(0.8),
                         ],
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.greenAccent),
-                        const SizedBox(width: 12),
+                        Icon(Icons.check_circle, color: colors.primary),
+                        SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            'Image captured successfully',
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            context.l10n.cameraImageCaptured,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: colors.onPrimary),
                           ),
                         ),
                       ],
@@ -309,122 +330,72 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
       ),
     );
   }
+}
 
-  Widget _buildFloatingButtons() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            icon: Icons.photo_library_rounded,
-            label: 'Gallery',
-            gradient: const LinearGradient(
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-            ),
-            onTap: () => _pickImage(ImageSource.gallery),
-          ),
-          const SizedBox(width: 16),
-          _buildActionButton(
-            icon: Icons.camera_alt_rounded,
-            label: 'Camera',
-            gradient: const LinearGradient(
-              colors: [Color(0xFFf093fb), Color(0xFFf5576c)],
-            ),
-            onTap: () => _pickImage(ImageSource.camera),
-          ),
-        ],
-      ),
-    );
-  }
+class _CaptureActions extends StatelessWidget {
+  final VoidCallback onGallery;
+  final VoidCallback onCamera;
 
-  Widget _buildScanButton() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: ButtonFeedbackService.wrap(context, _scanText),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00F5FF), Color(0xFF00A8FF)],
+  const _CaptureActions({
+    required this.onGallery,
+    required this.onCamera,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: AppSpacing.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          bottom: AppSpacing.lg,
+          top: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: AppButton.secondary(
+                label: l10n.cameraGallery,
+                onPressed: ButtonFeedbackService.wrap(context, onGallery),
+                icon: const Icon(Icons.photo_library_rounded),
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00F5FF).withOpacity(0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.document_scanner_rounded,
-                    color: Colors.white, size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  'Scan Text with AI',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppButton.primary(
+                label: l10n.cameraCamera,
+                onPressed: ButtonFeedbackService.wrap(context, onCamera),
+                icon: const Icon(Icons.camera_alt_rounded),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Gradient gradient,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: ButtonFeedbackService.wrap(context, onTap),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: gradient.colors.first.withOpacity(0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white, size: 24),
-                const SizedBox(width: 10),
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+class _ScanAction extends StatelessWidget {
+  final VoidCallback onScan;
+
+  const _ScanAction({required this.onScan});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: AppSpacing.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          bottom: AppSpacing.lg,
+          top: AppSpacing.sm,
+        ),
+        child: AppButton.primary(
+          label: l10n.cameraScanWithAi,
+          onPressed: ButtonFeedbackService.wrap(context, onScan),
+          icon: const Icon(Icons.document_scanner_rounded),
         ),
       ),
     );
