@@ -29,6 +29,9 @@ android {
 
     buildTypes {
         release {
+            // Disable R8 shrinking until ML Kit text recognizer keep rules are added.
+            isMinifyEnabled = false
+            isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
         }
     }

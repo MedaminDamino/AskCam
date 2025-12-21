@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
+import 'package:askcam/features/presentation/settings/settings_controller.dart';
+import 'package:askcam/features/presentation/screens/result_flow_args.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image/image.dart' as img;
+import 'package:provider/provider.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -17,6 +21,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+  String _lastSource = 'camera';
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
 
@@ -41,8 +46,10 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
 
   Future<void> _pickImage(ImageSource source) async {
     setState(() => _isLoading = true);
+    _lastSource = source == ImageSource.camera ? 'camera' : 'gallery';
 
     try {
+      final settings = context.read<SettingsController>();
       final XFile? image = await _picker.pickImage(
         source: source,
         maxWidth: 2048,
@@ -51,12 +58,13 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
       );
 
       if (image != null) {
-
         final File originalFile = File(image.path);
-        final File compressedFile = await _compressImage(originalFile);
+        final File outputFile = settings.autoEnhanceImages
+            ? await _compressImage(originalFile)
+            : originalFile;
 
         setState(() {
-          _selectedImage = File(image.path);
+          _selectedImage = outputFile;
           _isLoading = false;
         });
         _animController.forward(from: 0);
@@ -125,7 +133,10 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
       Navigator.pushNamed(
         context,
         Routes.textRecognition,
-        arguments: _selectedImage!,
+        arguments: ExtractResultArgs(
+          imageFile: _selectedImage!,
+          source: _lastSource,
+        ),
       );
     }
   }
@@ -141,7 +152,10 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: colors.onBackground),
-          onPressed: () => Navigator.pop(context),
+          onPressed: ButtonFeedbackService.wrap(
+            context,
+            () => Navigator.pop(context),
+          ),
         ),
         title: Text(
           'Capture Moment',
@@ -156,7 +170,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
           if (_selectedImage != null)
             IconButton(
               icon: Icon(Icons.delete_outline, color: colors.error),
-              onPressed: _clearImage,
+              onPressed: ButtonFeedbackService.wrap(context, _clearImage),
               tooltip: 'Clear Image',
             ),
           const ThemeToggleButton(),
@@ -330,7 +344,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _scanText,
+          onTap: ButtonFeedbackService.wrap(context, _scanText),
           borderRadius: BorderRadius.circular(20),
           child: Container(
             width: double.infinity,
@@ -380,7 +394,7 @@ class _CameraScreenState extends State<CameraScreen> with SingleTickerProviderSt
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: ButtonFeedbackService.wrap(context, onTap),
           borderRadius: BorderRadius.circular(20),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 18),

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
@@ -9,8 +8,6 @@ class MLKitManager {
   MLKitManager._internal();
 
   bool _isProcessing = false;
-  final Queue<Future<void> Function()> _operationQueue = Queue();
-
   /// Check if device is on WiFi (for model downloads)
   Future<bool> isOnWiFi() async {
     try {

@@ -3,6 +3,7 @@ import 'package:askcam/features/data/auth/auth_service.dart';
 import 'package:askcam/features/data/auth/user_profile_service.dart';
 import 'package:askcam/features/domain/auth/app_user.dart';
 import 'package:askcam/features/domain/auth/auth_repository.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthService _authService;
@@ -56,6 +57,26 @@ class AuthRepositoryImpl implements AuthRepository {
     );
 
     await _userProfileService.createUserProfile(appUser);
+  }
+
+  @override
+  Future<UserCredential?> signInWithGoogle() async {
+    final credential = await _authService.signInWithGoogle();
+    final user = credential?.user;
+    if (user == null) return credential;
+
+    try {
+      await _userProfileService.ensureGoogleUserProfile(
+        uid: user.uid,
+        email: user.email ?? '',
+        displayName: user.displayName,
+        photoUrl: user.photoURL,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Profile sync failed after Google sign-in: $e');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+    return credential;
   }
 
   @override

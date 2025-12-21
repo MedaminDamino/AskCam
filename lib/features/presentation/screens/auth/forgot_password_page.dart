@@ -1,4 +1,5 @@
 import 'package:askcam/features/presentation/auth/auth_controller.dart';
+import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -132,9 +133,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               width: double.infinity,
                               height: 52,
                               child: ElevatedButton(
-                                onPressed: controller.isLoading
-                                    ? null
-                                    : () => _submit(controller),
+                                onPressed: ButtonFeedbackService.wrap(
+                                  context,
+                                  controller.isLoading
+                                      ? null
+                                      : () => _submit(controller),
+                                ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: colors.primary,
                                   foregroundColor: colors.onPrimary,

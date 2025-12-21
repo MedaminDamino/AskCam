@@ -3,10 +3,13 @@ import 'dart:io';
 import 'package:askcam/core/utils/ai_service.dart';
 import 'package:askcam/core/utils/ml_kit_manager.dart';
 import 'package:askcam/core/utils/translation_service.dart';
+import 'package:askcam/features/presentation/settings/settings_controller.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
+import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:provider/provider.dart';
 
 /// Screen responsible for OCR + translation + AI assistance for a captured image.
 class TextRecognitionScreen extends StatefulWidget {
@@ -44,7 +47,9 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
   @override
   void initState() {
     super.initState();
+    final settings = context.read<SettingsController>();
     _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    _targetLang = settings.languageCode;
     AiService.instance.setResponseLanguage(_targetLang);
     _runOcrAndTranslation();
   }
@@ -141,8 +146,15 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     });
 
     try {
+      final settings = context.read<SettingsController>();
+      final sourceLang =
+          settings.autoDetectLanguage ? 'auto' : settings.languageCode;
       final translation = await TranslationService.instance
-          .translateFromArabicTo(_originalText, targetLang: _targetLang);
+          .translateFromArabicTo(
+        _originalText,
+        targetLang: _targetLang,
+        sourceLang: sourceLang,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -185,13 +197,18 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     });
 
     try {
-      final response = await AiService.instance.askQuestion(_translatedText);
+      final result = await AiService.instance.askQuestion(_translatedText);
       if (!mounted) return;
 
       setState(() {
-        _aiAnswer = response.trim().isEmpty
+        if (!result.ok) {
+          _aiAnswer = result.message;
+          return;
+        }
+        final cleaned = result.message.trim();
+        _aiAnswer = cleaned.isEmpty
             ? 'The AI could not come up with an answer. Please try again.'
-            : response.trim();
+            : cleaned;
       });
     } catch (error, stackTrace) {
       debugPrint('TextRecognitionScreen AI error: $error');
@@ -479,9 +496,12 @@ class _TextRecognitionScreenState extends State<TextRecognitionScreen> {
     return SizedBox(
       height: 54,
       child: ElevatedButton(
-        onPressed: (_translatedText.trim().isEmpty || _isAskingAi || _isTranslating)
-            ? null
-            : _askAiAboutText,
+        onPressed: ButtonFeedbackService.wrap(
+          context,
+          (_translatedText.trim().isEmpty || _isAskingAi || _isTranslating)
+              ? null
+              : _askAiAboutText,
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: colors.primary,
           disabledBackgroundColor: colors.surfaceVariant,

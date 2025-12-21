@@ -1,4 +1,5 @@
 import 'package:askcam/core/utils/image_cache_manager.dart';
+import 'package:askcam/core/utils/settings_storage.dart';
 import 'package:askcam/core/theme/app_theme.dart';
 import 'package:askcam/core/theme/theme_controller.dart';
 import 'package:askcam/features/data/auth/auth_service.dart';
@@ -6,6 +7,7 @@ import 'package:askcam/features/data/auth/user_profile_service.dart';
 import 'package:askcam/features/domain/auth/auth_repository.dart';
 import 'package:askcam/features/domain/auth/auth_repository_impl.dart';
 import 'package:askcam/features/presentation/auth/auth_controller.dart';
+import 'package:askcam/features/presentation/settings/settings_controller.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,21 +16,33 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Provide AI_API_KEY at runtime (ex: flutter run --dart-define=AI_API_KEY=YOUR_KEY).
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await ImageCacheManager().clearOldCache();
   final themeController = ThemeController();
   await themeController.loadThemeMode();
+  final settingsController = SettingsController(
+    storage: SettingsStorage(),
+  );
+  await settingsController.load();
 
-
-  runApp(MyApp(themeController: themeController));
+  runApp(MyApp(
+    themeController: themeController,
+    settingsController: settingsController,
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final ThemeController themeController;
+  final SettingsController settingsController;
 
-  const MyApp({super.key, required this.themeController});
+  const MyApp({
+    super.key,
+    required this.themeController,
+    required this.settingsController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +50,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<ThemeController>.value(
           value: themeController,
+        ),
+        ChangeNotifierProvider<SettingsController>.value(
+          value: settingsController,
         ),
         Provider<AuthRepository>(
           create: (_) => AuthRepositoryImpl(

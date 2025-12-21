@@ -30,6 +30,32 @@ class UserProfileService {
     });
   }
 
+  Future<void> ensureGoogleUserProfile({
+    required String uid,
+    required String email,
+    String? displayName,
+    String? photoUrl,
+  }) async {
+    final docRef = _users.doc(uid);
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      final data = <String, dynamic>{
+        'uid': uid,
+        'email': email,
+        'displayName': displayName ?? '',
+        'photoURL': photoUrl,
+        'provider': 'google',
+        'lastLoginAt': FieldValue.serverTimestamp(),
+      };
+
+      if (!snapshot.exists) {
+        data['createdAt'] = FieldValue.serverTimestamp();
+      }
+
+      transaction.set(docRef, data, SetOptions(merge: true));
+    });
+  }
+
   Future<AppUser?> getUserProfile(String uid) async {
     final snapshot = await _users.doc(uid).get();
     if (!snapshot.exists) return null;

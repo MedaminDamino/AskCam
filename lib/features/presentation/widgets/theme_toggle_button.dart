@@ -1,4 +1,5 @@
 import 'package:askcam/core/theme/theme_controller.dart';
+import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,11 +24,11 @@ class ThemeToggleButton extends StatelessWidget {
         effectiveIsDark ? Icons.light_mode : Icons.dark_mode,
         color: color ?? colors.onSurfaceVariant,
       ),
-      onPressed: () {
+      onPressed: ButtonFeedbackService.wrap(context, () {
         controller.setThemeMode(
           effectiveIsDark ? ThemeMode.light : ThemeMode.dark,
         );
-      },
+      }),
     );
   }
 }

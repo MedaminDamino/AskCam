@@ -12,7 +12,12 @@
           "package_name": "askcam.example.askcam"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "326547043793-ol775gmmtd9ccacakqcdmfqtmpv6n023.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAQww8WtkFxQD_MRn2xUgJPDr-2oET7xgU"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "326547043793-ol775gmmtd9ccacakqcdmfqtmpv6n023.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "326547043793-nvolfd9f8holneb3jqj21h2krk0re19p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "askcam.example.askcam"
+              }
+            }
+          ]
         }
       }
     }

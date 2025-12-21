@@ -1,5 +1,7 @@
 import 'package:askcam/features/presentation/auth/auth_controller.dart';
+import 'package:askcam/features/presentation/settings/settings_controller.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
+import 'package:askcam/core/services/button_feedback_service.dart';
 import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,9 +10,38 @@ import 'package:provider/provider.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  static const Map<String, Map<String, String>> _labels = {
+    'en': {
+      'welcome': 'Welcome to',
+      'tagline': 'Capture, analyze, and discover insights from your images',
+      'camera': 'Camera',
+      'gallery': 'Gallery',
+      'history': 'History',
+      'settings': 'Settings',
+      'cameraSubtitle': 'Take a photo',
+      'gallerySubtitle': 'Browse photos',
+      'historySubtitle': 'Past scans',
+      'settingsSubtitle': 'Preferences',
+    },
+    'fr': {
+      'welcome': 'Bienvenue sur',
+      'tagline': 'Capturez, analysez et decouvrez vos images',
+      'camera': 'Camera',
+      'gallery': 'Galerie',
+      'history': 'Historique',
+      'settings': 'Parametres',
+      'cameraSubtitle': 'Prendre une photo',
+      'gallerySubtitle': 'Voir les photos',
+      'historySubtitle': 'Scans precedents',
+      'settingsSubtitle': 'Preferences',
+    },
+  };
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final settings = context.watch<SettingsController>();
+    final labels = _labels[settings.languageCode] ?? _labels['en']!;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -22,14 +53,17 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Logout',
             icon: Icon(Icons.logout, color: colors.onSurfaceVariant),
-            onPressed: () => _showLogoutDialog(context),
+            onPressed: ButtonFeedbackService.wrap(
+              context,
+              () => _showLogoutDialog(context),
+            ),
           ),
         ],
       ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final crossAxisCount = constraints.maxWidth < 500 ? 1 : 2;
+            final crossAxisCount = 2;
 
             return CustomScrollView(
               slivers: [
@@ -39,12 +73,12 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Welcome to',
-                          style: GoogleFonts.poppins(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w300,
-                            color: colors.onSurfaceVariant,
+                      Text(
+                        labels['welcome']!,
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                          color: colors.onSurfaceVariant,
                           ),
                         ),
                         ShaderMask(
@@ -61,12 +95,12 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          'Capture, analyze, and discover insights from your images',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: colors.onSurfaceVariant,
-                          ),
+                      Text(
+                        labels['tagline']!,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: colors.onSurfaceVariant,
+                        ),
                         ),
                         const SizedBox(height: 60),
                       ],
@@ -87,8 +121,8 @@ class HomeScreen extends StatelessWidget {
                         _buildFeatureCard(
                           context,
                           icon: Icons.camera_alt_rounded,
-                          title: 'Camera',
-                          subtitle: 'Take a photo',
+                          title: labels['camera']!,
+                          subtitle: labels['cameraSubtitle']!,
                           gradient: const LinearGradient(
                             colors: [Color(0xFF667eea), Color(0xFF764ba2)],
                           ),
@@ -99,8 +133,8 @@ class HomeScreen extends StatelessWidget {
                         _buildFeatureCard(
                           context,
                           icon: Icons.image_rounded,
-                          title: 'Gallery',
-                          subtitle: 'Browse photos',
+                          title: labels['gallery']!,
+                          subtitle: labels['gallerySubtitle']!,
                           gradient: const LinearGradient(
                             colors: [Color(0xFFf093fb), Color(0xFFf5576c)],
                           ),
@@ -111,8 +145,8 @@ class HomeScreen extends StatelessWidget {
                         _buildFeatureCard(
                           context,
                           icon: Icons.history_rounded,
-                          title: 'History',
-                          subtitle: 'Past scans',
+                          title: labels['history']!,
+                          subtitle: labels['historySubtitle']!,
                           gradient: const LinearGradient(
                             colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
                           ),
@@ -123,8 +157,8 @@ class HomeScreen extends StatelessWidget {
                         _buildFeatureCard(
                           context,
                           icon: Icons.settings_rounded,
-                          title: 'Settings',
-                          subtitle: 'Preferences',
+                          title: labels['settings']!,
+                          subtitle: labels['settingsSubtitle']!,
                           gradient: const LinearGradient(
                             colors: [Color(0xFF43e97b), Color(0xFF38f9d7)],
                           ),
@@ -155,7 +189,7 @@ class HomeScreen extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: ButtonFeedbackService.wrap(context, onTap),
         borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
@@ -209,11 +243,17 @@ class HomeScreen extends StatelessWidget {
           content: const Text('Are you sure you want to log out?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
+              onPressed: ButtonFeedbackService.wrap(
+                dialogContext,
+                () => Navigator.of(dialogContext).pop(false),
+              ),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
+              onPressed: ButtonFeedbackService.wrap(
+                dialogContext,
+                () => Navigator.of(dialogContext).pop(true),
+              ),
               child: const Text('Logout'),
             ),
           ],

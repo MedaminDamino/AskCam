@@ -1,5 +1,8 @@
 import 'package:askcam/features/presentation/auth/auth_controller.dart';
+import 'package:askcam/core/services/button_feedback_service.dart';
+import 'package:askcam/features/presentation/widgets/google_sign_in_button.dart';
 import 'package:askcam/features/presentation/widgets/theme_toggle_button.dart';
+import 'package:askcam/routes/app_routes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -61,14 +64,36 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
 
     if (success) {
+      debugPrint('Registration success, navigating to Home.');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Account created successfully.')),
       );
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        Routes.home,
+        (route) => false,
+      );
     } else {
       final message = controller.errorMessage ?? 'Registration failed.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
+  Future<void> _submitGoogle(AuthController controller) async {
+    final success = await controller.signInWithGoogle();
+
+    if (success && mounted) {
+      debugPrint('Google sign-up success, navigating to Home.');
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        Routes.home,
+        (route) => false,
+      );
+      return;
+    }
+
+    if (!success && mounted) {
+      final message = controller.errorMessage ?? 'Google sign-in failed.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
@@ -258,11 +283,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                 label: 'Password',
                                 icon: Icons.lock_outline,
                                 suffix: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
+                                  onPressed: ButtonFeedbackService.wrap(
+                                    context,
+                                    () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
                                   icon: Icon(
                                     _obscurePassword
                                         ? Icons.visibility_outlined
@@ -288,12 +316,15 @@ class _RegisterPageState extends State<RegisterPage> {
                                 label: 'Confirm password',
                                 icon: Icons.lock_outline,
                                 suffix: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureConfirmPassword =
-                                          !_obscureConfirmPassword;
-                                    });
-                                  },
+                                  onPressed: ButtonFeedbackService.wrap(
+                                    context,
+                                    () {
+                                      setState(() {
+                                        _obscureConfirmPassword =
+                                            !_obscureConfirmPassword;
+                                      });
+                                    },
+                                  ),
                                   icon: Icon(
                                     _obscureConfirmPassword
                                         ? Icons.visibility_outlined
@@ -319,9 +350,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               width: double.infinity,
                               height: 52,
                               child: ElevatedButton(
-                                onPressed: controller.isLoading
-                                    ? null
-                                    : () => _submit(controller),
+                                onPressed: ButtonFeedbackService.wrap(
+                                  context,
+                                  controller.isLoading
+                                      ? null
+                                      : () => _submit(controller),
+                                ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: colors.primary,
                                   foregroundColor: colors.onPrimary,
@@ -346,6 +380,11 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ),
                               ),
                             ),
+                            const SizedBox(height: 16),
+                            GoogleSignInButton(
+                              isLoading: controller.isLoading,
+                              onPressed: () => _submitGoogle(controller),
+                            ),
                           ],
                         ),
                       ),
@@ -360,11 +399,14 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              if (Navigator.canPop(context)) {
-                                Navigator.pop(context);
-                              }
-                            },
+                            onPressed: ButtonFeedbackService.wrap(
+                              context,
+                              () {
+                                if (Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                }
+                              },
+                            ),
                             child: const Text('Sign in'),
                           ),
                         ],

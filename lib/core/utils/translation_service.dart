@@ -15,11 +15,16 @@ class TranslationService {
   Future<String> translate(
     String text, {
     required String targetLang,
+    String sourceLang = 'auto',
   }) async {
     if (text.trim().isEmpty) return '';
 
     try {
-      final translation = await _translator.translate(text, to: targetLang);
+      final translation = await _translator.translate(
+        text,
+        to: targetLang,
+        from: sourceLang,
+      );
       return translation.text;
     } catch (error, stackTrace) {
       // Log error details and fall back to returning the original text.
@@ -44,6 +49,7 @@ class TranslationService {
   Future<String> translateFromArabicTo(
     String text, {
     required String targetLang,
+    String sourceLang = 'auto',
   }) =>
-      translate(text, targetLang: targetLang);
+      translate(text, targetLang: targetLang, sourceLang: sourceLang);
 }

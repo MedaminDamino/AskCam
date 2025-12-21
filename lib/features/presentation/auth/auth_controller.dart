@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:askcam/features/domain/auth/auth_repository.dart';
 
 class AuthController extends ChangeNotifier {
@@ -75,8 +76,56 @@ class AuthController extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       _setError(_mapAuthException(e));
       return false;
-    } catch (_) {
-      _setError('Something went wrong. Please try again.');
+    } catch (e, stackTrace) {
+      debugPrint('Error signIn: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      final message = e.toString().trim();
+      _setError(message.isNotEmpty ? message : 'Sign-in failed. Please try again.');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> signInWithGoogle() async {
+    _setLoading(true);
+    try {
+      final credential = await _repository.signInWithGoogle();
+      if (credential == null) {
+        _setError('Sign-in cancelled.');
+        return false;
+      }
+      _clearError();
+      return true;
+    } on PlatformException catch (e) {
+      debugPrint('GoogleSignIn PlatformException: ${e.code} - ${e.message}');
+      if (_hasAuthenticatedUser()) {
+        _clearError();
+        return true;
+      }
+      _setError(_mapGooglePlatformException(e));
+      return false;
+    } on FirebaseAuthException catch (e) {
+      debugPrint(
+        'FirebaseAuthException signInWithGoogle: ${e.code} - ${e.message}',
+      );
+      if (_hasAuthenticatedUser()) {
+        _clearError();
+        return true;
+      }
+      _setError(_mapAuthException(e));
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('Error signInWithGoogle: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      if (_hasAuthenticatedUser()) {
+        _clearError();
+        return true;
+      }
+      final message = e.toString().trim();
+      _setError(
+        message.isNotEmpty ? message : 'Google sign-in failed. Please try again.',
+      );
       return false;
     } finally {
       _setLoading(false);
@@ -131,8 +180,11 @@ class AuthController extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       _setError(_mapAuthException(e));
       return false;
-    } catch (_) {
-      _setError('Something went wrong. Please try again.');
+    } catch (e, stackTrace) {
+      debugPrint('Error register: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      final message = e.toString().trim();
+      _setError(message.isNotEmpty ? message : 'Registration failed. Please try again.');
       return false;
     } finally {
       _setLoading(false);
@@ -154,8 +206,11 @@ class AuthController extends ChangeNotifier {
     } on FirebaseAuthException catch (e) {
       _setError(_mapAuthException(e));
       return false;
-    } catch (_) {
-      _setError('Something went wrong. Please try again.');
+    } catch (e, stackTrace) {
+      debugPrint('Error sendPasswordReset: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      final message = e.toString().trim();
+      _setError(message.isNotEmpty ? message : 'Reset failed. Please try again.');
       return false;
     } finally {
       _setLoading(false);
@@ -203,10 +258,17 @@ class AuthController extends ChangeNotifier {
         return 'Your password is too weak. Use at least 8 characters, 1 uppercase letter, and 1 number.';
       case 'invalid-credential':
         return 'Invalid credentials. Double-check your email and password.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with a different sign-in method.';
       case 'operation-not-allowed':
         return 'Email/password sign-in is disabled for this project.';
       case 'user-disabled':
         return 'This account has been disabled.';
+      case 'popup-closed-by-user':
+      case 'cancelled-popup-request':
+        return 'Sign-in cancelled.';
+      case 'popup-blocked':
+        return 'Popup blocked. Please allow popups and try again.';
       case 'too-many-requests':
         return 'Too many attempts. Please try again later.';
       case 'invalid-api-key':
@@ -219,6 +281,25 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  String _mapGooglePlatformException(PlatformException exception) {
+    final message = exception.message ?? '';
+    if (exception.code == 'network_error') {
+      return 'Network error. Check your connection and try again.';
+    }
+    if (exception.code == 'sign_in_canceled' ||
+        exception.code == 'sign_in_cancelled') {
+      return 'Sign-in cancelled.';
+    }
+    if (exception.code == 'sign_in_failed' &&
+        message.contains('ApiException: 10')) {
+      return 'Google sign-in configuration error (SHA/package/OAuth).';
+    }
+    if (message.isNotEmpty) {
+      return message;
+    }
+    return 'Google sign-in failed (${exception.code}). Please try again.';
+  }
+
   void _setLoading(bool value) {
     if (_isLoading == value) return;
     _isLoading = value;
@@ -229,6 +310,8 @@ class AuthController extends ChangeNotifier {
     _errorMessage = message;
     notifyListeners();
   }
+
+  bool _hasAuthenticatedUser() => _repository.currentUser != null;
 
   void _clearError() {
     if (_errorMessage == null) return;
