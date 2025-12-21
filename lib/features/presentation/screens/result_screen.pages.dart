@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:askcam/core/config/app_runtime_config.dart';
 import 'package:askcam/core/services/image_upload_service.dart';
 import 'package:askcam/core/services/history_service.dart';
@@ -366,8 +368,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                   return;
                 }
 
-                final language =
-                    context.read<SettingsController>().languageCode;
+                final language = context.read<SettingsController>().languageCode;
                 await service.saveWord(
                   text: value,
                   imageId: _uploadedImageId,
@@ -430,9 +431,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                     ),
                     padding: AppSpacing.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? colors.surfaceVariant
-                          : colors.surfaceVariant,
+                      color: isDark ? colors.surfaceVariant : colors.surfaceVariant,
                       borderRadius: AppRadius.circular(AppRadius.md),
                       border: Border.all(color: colors.outlineVariant),
                     ),
@@ -466,9 +465,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                           label: context.l10n.actionCancel,
                           onPressed: ButtonFeedbackService.wrap(
                             sheetContext,
-                            isSaving
-                                ? null
-                                : () => Navigator.pop(sheetContext),
+                            isSaving ? null : () => Navigator.pop(sheetContext),
                           ),
                           expanded: true,
                         ),
@@ -535,10 +532,9 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       debugPrint('Save history failed: $e');
       debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
-      final message =
-          _isOfflineError(e)
-              ? context.l10n.errorNoInternetConnection
-              : context.l10n.historySaveFailed;
+      final message = _isOfflineError(e)
+          ? context.l10n.errorNoInternetConnection
+          : context.l10n.historySaveFailed;
       _showSnackBar(message);
     } finally {
       if (!mounted) return;
@@ -569,7 +565,7 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
             left: AppSpacing.xl,
             right: AppSpacing.xl,
             top: AppSpacing.lg,
-            bottom: AppSpacing.xxl + AppSpacing.xxl + AppSpacing.xxl,
+            bottom: AppSpacing.xl, // ✅ clean padding (no hack)
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -601,14 +597,18 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                               ),
                             ),
                             SizedBox(width: AppSpacing.sm),
-                            Text(
-                              context.l10n.ocrExtractingText,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: colors.onSurfaceVariant,
-                                  ),
+                            Expanded(
+                              child: Text(
+                                context.l10n.ocrExtractingText,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: colors.onSurfaceVariant,
+                                    ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -654,15 +654,14 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
                       label: context.l10n.saveWordsAction,
                       onPressed: ButtonFeedbackService.wrap(
                         context,
-                        (_isOcrLoading || !_isOnline)
-                            ? null
-                            : _openSaveWordsSheet,
+                        (_isOcrLoading || !_isOnline) ? null : _openSaveWordsSheet,
                       ),
                       icon: const Icon(Icons.bookmark_add_rounded),
                     ),
                   ),
                 ],
               ),
+              SizedBox(height: AppSpacing.sm),
               Text(
                 context.l10n.ocrEditInstruction,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -673,59 +672,111 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
           ),
         ),
       ),
+
+      // ✅ FIX: responsive bottom bar => NO OVERFLOW on small phones / large text
       bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: AppSpacing.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            top: AppSpacing.sm,
-            bottom: AppSpacing.lg,
-          ),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: colors.shadow.withOpacity(0.08),
-                blurRadius: AppSpacing.md,
-                offset: Offset(0, -AppSpacing.xs),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: AppButton.secondary(
-                  label: context.l10n.actionHome,
-                  onPressed: ButtonFeedbackService.wrap(context, _goHome),
-                  icon: const Icon(Icons.home_rounded),
-                ),
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppButton.primary(
-                  label: context.l10n.actionTranslate,
-                  onPressed: ButtonFeedbackService.wrap(
-                    context,
-                    _isOcrLoading ? null : _goTranslate,
-                  ),
-                  icon: const Icon(Icons.translate_rounded),
-                ),
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppButton.primary(
-                  label: context.l10n.actionAskAi,
-                  onPressed: ButtonFeedbackService.wrap(
-                    context,
-                    _isOcrLoading ? null : _goAskAi,
-                  ),
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                ),
-              ),
-            ],
-          ),
+  top: false,
+  child: LayoutBuilder(
+    builder: (context, constraints) {
+      final textScale = MediaQuery.textScalerOf(context).scale(1);
+      final tightWidth = constraints.maxWidth < 420;
+      final largeText = textScale >= 1.05;
+      final useTwoRows = tightWidth || largeText;
+
+      final colors = Theme.of(context).colorScheme;
+
+      return Container(
+        padding: AppSpacing.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.sm,
+          bottom: AppSpacing.lg,
         ),
-      ),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          boxShadow: [
+            BoxShadow(
+              color: colors.shadow.withOpacity(0.08),
+              blurRadius: AppSpacing.md,
+              offset: Offset(0, -AppSpacing.xs),
+            ),
+          ],
+        ),
+        child: useTwoRows
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton.secondary(
+                          label: context.l10n.actionHome,
+                          onPressed: ButtonFeedbackService.wrap(context, _goHome),
+                          icon: const Icon(Icons.home_rounded),
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: AppButton.primary(
+                          label: context.l10n.actionTranslate,
+                          onPressed: ButtonFeedbackService.wrap(
+                            context,
+                            _isOcrLoading ? null : _goTranslate,
+                          ),
+                          icon: const Icon(Icons.translate_rounded),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.sm),
+                  AppButton.primary(
+                    label: context.l10n.actionAskAi,
+                    onPressed: ButtonFeedbackService.wrap(
+                      context,
+                      _isOcrLoading ? null : () => _goAskAi(),
+                    ),
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: AppButton.secondary(
+                      label: context.l10n.actionHome,
+                      onPressed: ButtonFeedbackService.wrap(context, _goHome),
+                      icon: const Icon(Icons.home_rounded),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: AppButton.primary(
+                      label: context.l10n.actionTranslate,
+                      onPressed: ButtonFeedbackService.wrap(
+                        context,
+                        _isOcrLoading ? null : _goTranslate,
+                      ),
+                      icon: const Icon(Icons.translate_rounded),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: AppButton.primary(
+                      label: context.l10n.actionAskAi,
+                      onPressed: ButtonFeedbackService.wrap(
+                        context,
+                        _isOcrLoading ? null : () => _goAskAi(),
+                      ),
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                    ),
+                  ),
+                ],
+              ),
+      );
+    },
+  ),
+),
+
     );
   }
 
@@ -790,11 +841,15 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
             ),
           ),
           SizedBox(width: AppSpacing.sm),
-          Text(
-            context.l10n.uploadingImage,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                ),
+          Expanded(
+            child: Text(
+              context.l10n.uploadingImage,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       );
@@ -833,5 +888,118 @@ class _ExtractResultPageState extends State<ExtractResultPage> {
       return 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
     }
     return name;
+  }
+}
+
+/// ✅ Responsive bottom bar that avoids overflow on small phones / large text.
+class _ResponsiveBottomBar extends StatelessWidget {
+  final VoidCallback onHome;
+  final VoidCallback? onTranslate;
+  final VoidCallback? onAskAi;
+
+  const _ResponsiveBottomBar({
+    required this.onHome,
+    required this.onTranslate,
+    required this.onAskAi,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tightWidth = constraints.maxWidth < 380;
+        final largeText = textScale >= 1.15;
+
+        // If screen is narrow OR user has large font => use 2 rows
+        final useTwoRows = tightWidth || largeText;
+
+        return Container(
+          padding: AppSpacing.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.lg,
+          ),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow.withOpacity(0.08),
+                blurRadius: AppSpacing.md,
+                offset: Offset(0, -AppSpacing.xs),
+              ),
+            ],
+          ),
+          child: useTwoRows
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppButton.secondary(
+                            label: context.l10n.actionHome,
+                            onPressed: ButtonFeedbackService.wrap(context, onHome),
+                            icon: const Icon(Icons.home_rounded),
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: AppButton.primary(
+                            label: context.l10n.actionTranslate,
+                            onPressed: ButtonFeedbackService.wrap(
+                              context,
+                              onTranslate,
+                            ),
+                            icon: const Icon(Icons.translate_rounded),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    AppButton.primary(
+                      label: context.l10n.actionAskAi,
+                      onPressed: ButtonFeedbackService.wrap(context, onAskAi),
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      expanded: true,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: AppButton.secondary(
+                        label: context.l10n.actionHome,
+                        onPressed: ButtonFeedbackService.wrap(context, onHome),
+                        icon: const Icon(Icons.home_rounded),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: AppButton.primary(
+                        label: context.l10n.actionTranslate,
+                        onPressed: ButtonFeedbackService.wrap(
+                          context,
+                          onTranslate,
+                        ),
+                        icon: const Icon(Icons.translate_rounded),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: AppButton.primary(
+                        label: context.l10n.actionAskAi,
+                        onPressed: ButtonFeedbackService.wrap(context, onAskAi),
+                        icon: const Icon(Icons.auto_awesome_rounded),
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
+    );
   }
 }
